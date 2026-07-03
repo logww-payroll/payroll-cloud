@@ -1045,12 +1045,31 @@
     }
 
     function deleteEmployee(id) {
-      if (!confirm('Are you sure you want to delete this employee? This cannot be undone.')) return;
-      let employees = getData('employees', []);
-      employees = employees.filter(e => e.id !== id);
-      saveData('employees', employees);
-      deleteFromSupabase('employees_simple', id);
-      renderEmployees();
+      const employees = getData('employees', []);
+      const emp = employees.find(e => e.id === id);
+      if (!emp) return;
+      
+      // Show custom confirmation modal
+      const confirmed = confirm(`Delete ${emp.name}? This action cannot be undone and will permanently remove this employee from the system.`);
+      if (!confirmed) return;
+      
+      // Delete the employee
+      const updated = employees.filter(e => e.id !== id);
+      saveData('employees', updated);
+      
+      // Also delete from Supabase
+      supabaseClient.from('employees_simple')
+        .delete()
+        .eq('id', id)
+        .then(() => {
+          console.log('Deleted from Supabase');
+          renderEmployees();
+          alert('Employee deleted successfully');
+        })
+        .catch(err => {
+          console.error('Supabase delete error:', err);
+          renderEmployees();
+        });
     }
 
     function editEmployee(id) {
