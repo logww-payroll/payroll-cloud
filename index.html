@@ -99,6 +99,10 @@
       document.getElementById('edit-emp-email').value = emp.email || '';
       document.getElementById('edit-emp-status').value = emp.status || 'active';
       document.getElementById('edit-emp-trip-rate').value = emp.trip_comm_rate || 0;
+      document.getElementById('edit-emp-other-allowance').value = emp.other_allowance || 0;
+      document.getElementById('edit-emp-accom-allowance').value = emp.accom_allowance || 0;
+      document.getElementById('edit-emp-attendance-allowance').value = emp.attendance_allowance || 0;
+      document.getElementById('edit-emp-adhoc-allowance').value = emp.adhoc_allowance || 0;
       document.getElementById('edit-emp-notes').value = emp.notes || '';
       
       document.getElementById('edit-modal').style.display = 'flex';
@@ -126,6 +130,10 @@
         email: document.getElementById('edit-emp-email').value.trim(),
         status: document.getElementById('edit-emp-status').value,
         trip_comm_rate: parseFloat(document.getElementById('edit-emp-trip-rate').value) || 0,
+        other_allowance: parseFloat(document.getElementById('edit-emp-other-allowance').value) || 0,
+        accom_allowance: parseFloat(document.getElementById('edit-emp-accom-allowance').value) || 0,
+        attendance_allowance: parseFloat(document.getElementById('edit-emp-attendance-allowance').value) || 0,
+        adhoc_allowance: parseFloat(document.getElementById('edit-emp-adhoc-allowance').value) || 0,
         notes: document.getElementById('edit-emp-notes').value.trim()
       };
 
@@ -588,6 +596,7 @@
       <div id="employees" class="page">
         <h2>Employee Management</h2>
         
+        <div style="display:none;">
         <h3>Add Employee</h3>
         <div class="form-row">
           <div class="form-group">
@@ -633,6 +642,7 @@
           <input type="text" id="emp-notes" placeholder="Any additional notes">
         </div>
         <button class="btn btn-primary" onclick="addEmployee()">Add Employee</button>
+        </div>
 
         <h3>Current Employees</h3>
         <div id="employees-list"></div>
@@ -675,9 +685,31 @@
               </select>
             </div>
           </div>
-          <div class="form-group">
-            <label>Trip Commission Rate</label>
-            <input type="number" id="edit-emp-trip-rate" step="0.01">
+          <div class="form-group" style="border-top:1px solid #ddd;padding-top:15px;margin-top:15px;">
+            <strong>Fixed Allowances (by law):</strong>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Other Allowance (AED)</label>
+              <input type="number" id="edit-emp-other-allowance" value="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label>Accommodation Allowance (AED)</label>
+              <input type="number" id="edit-emp-accom-allowance" value="0" step="0.01">
+            </div>
+          </div>
+          <div class="form-group" style="border-top:1px solid #ddd;padding-top:15px;margin-top:15px;">
+            <strong>Variable Allowances (manual entry):</strong>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Attendance Allowance (AED)</label>
+              <input type="number" id="edit-emp-attendance-allowance" value="0" step="0.01" placeholder="Conditional to days worked">
+            </div>
+            <div class="form-group">
+              <label>Adhoc Allowance (AED)</label>
+              <input type="number" id="edit-emp-adhoc-allowance" value="0" step="0.01" placeholder="Manual entry">
+            </div>
           </div>
           <div class="form-group">
             <label>Notes</label>
@@ -1013,12 +1045,23 @@
     }
 
     function deleteEmployee(id) {
-      if (!confirm('Delete this employee?')) return;
+      if (!confirm('Are you sure you want to delete this employee? This cannot be undone.')) return;
       let employees = getData('employees', []);
       employees = employees.filter(e => e.id !== id);
       saveData('employees', employees);
       deleteFromSupabase('employees_simple', id);
       renderEmployees();
+    }
+
+    function editEmployee(id) {
+      console.log('Edit clicked for:', id);
+      const employees = getData('employees', []);
+      const emp = employees.find(e => e.id === id);
+      if (!emp) {
+        alert('Employee not found');
+        return;
+      }
+      openEditModal(id);
     }
 
     function renderEmployees() {
@@ -1027,7 +1070,7 @@
         <table>
           <thead><tr><th>Name</th><th>Designation</th><th>Email</th><th>Status</th><th>Basic</th><th>Other Allow</th><th>Accom Allow</th><th>Attend Allow</th><th>Adhoc Allow</th><th>Action</th></tr></thead>
           <tbody>
-            ${employees.map(e => `<tr><td>${e.name}</td><td>${e.designation || '—'}</td><td>${e.email || '—'}</td><td><span style="padding:2px 8px;border-radius:3px;background:${e.status === 'active' ? '#d5f4e6' : '#fadbd8'};color:${e.status === 'active' ? '#27ae60' : '#e74c3c'};font-size:12px">${e.status || 'active'}</span></td><td>${e.salary.toLocaleString('en-US', {minimumFractionDigits: 2})}</td><td><button class="btn btn-primary" onclick="openEditModal('${e.id}')" style="margin-right:5px">Edit</button><button class="btn btn-danger" onclick="deleteEmployee('${e.id}')">Delete</button></td></tr>`).join('')}
+            ${employees.map(e => `<tr><td>${e.name}</td><td>${e.designation || '—'}</td><td>${e.email || '—'}</td><td><span style="padding:2px 8px;border-radius:3px;background:${e.status === 'active' ? '#d5f4e6' : '#fadbd8'};color:${e.status === 'active' ? '#27ae60' : '#e74c3c'};font-size:12px">${e.status || 'active'}</span></td><td>${e.salary.toLocaleString('en-US', {minimumFractionDigits: 2})}</td><td>${(e.other_allowance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td><td>${(e.accom_allowance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td><td>${(e.attendance_allowance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td><td>${(e.adhoc_allowance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td><td style="display:flex;gap:5px;"><button class="btn btn-primary" onclick="editEmployee('${e.id}')" style="flex:1;">Edit</button><button class="btn btn-danger" onclick="deleteEmployee('${e.id}')" style="flex:1;">Delete</button></td></tr>`).join('')}
           </tbody>
         </table>
       ` : '<p class="empty-state">No employees yet. Add one above.</p>';
@@ -1492,6 +1535,10 @@
         email: document.getElementById('edit-emp-email').value.trim(),
         status: document.getElementById('edit-emp-status').value,
         trip_comm_rate: parseFloat(document.getElementById('edit-emp-trip-rate').value) || 0,
+        other_allowance: parseFloat(document.getElementById('edit-emp-other-allowance').value) || 0,
+        accom_allowance: parseFloat(document.getElementById('edit-emp-accom-allowance').value) || 0,
+        attendance_allowance: parseFloat(document.getElementById('edit-emp-attendance-allowance').value) || 0,
+        adhoc_allowance: parseFloat(document.getElementById('edit-emp-adhoc-allowance').value) || 0,
         notes: document.getElementById('edit-emp-notes').value.trim()
       };
 
