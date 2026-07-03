@@ -98,7 +98,6 @@
       document.getElementById('edit-emp-salary').value = emp.salary || 1300;
       document.getElementById('edit-emp-email').value = emp.email || '';
       document.getElementById('edit-emp-status').value = emp.status || 'active';
-      document.getElementById('edit-emp-trip-rate').value = emp.trip_comm_rate || 0;
       document.getElementById('edit-emp-other-allowance').value = emp.other_allowance || 0;
       document.getElementById('edit-emp-accom-allowance').value = emp.accom_allowance || 0;
       document.getElementById('edit-emp-attendance-allowance').value = emp.attendance_allowance || 0;
@@ -129,7 +128,7 @@
         salary: parseFloat(document.getElementById('edit-emp-salary').value) || 1300,
         email: document.getElementById('edit-emp-email').value.trim(),
         status: document.getElementById('edit-emp-status').value,
-        trip_comm_rate: parseFloat(document.getElementById('edit-emp-trip-rate').value) || 0,
+        
         other_allowance: parseFloat(document.getElementById('edit-emp-other-allowance').value) || 0,
         accom_allowance: parseFloat(document.getElementById('edit-emp-accom-allowance').value) || 0,
         attendance_allowance: parseFloat(document.getElementById('edit-emp-attendance-allowance').value) || 0,
@@ -1553,7 +1552,7 @@
         salary: parseFloat(document.getElementById('edit-emp-salary').value) || 1300,
         email: document.getElementById('edit-emp-email').value.trim(),
         status: document.getElementById('edit-emp-status').value,
-        trip_comm_rate: parseFloat(document.getElementById('edit-emp-trip-rate').value) || 0,
+        
         other_allowance: parseFloat(document.getElementById('edit-emp-other-allowance').value) || 0,
         accom_allowance: parseFloat(document.getElementById('edit-emp-accom-allowance').value) || 0,
         attendance_allowance: parseFloat(document.getElementById('edit-emp-attendance-allowance').value) || 0,
