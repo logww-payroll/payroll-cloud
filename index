@@ -1025,7 +1025,7 @@
       const employees = getData('employees', []);
       const html = employees.length ? `
         <table>
-          <thead><tr><th>Name</th><th>Designation</th><th>Email</th><th>Status</th><th>Basic (AED)</th><th>Action</th></tr></thead>
+          <thead><tr><th>Name</th><th>Designation</th><th>Email</th><th>Status</th><th>Basic</th><th>Other Allow</th><th>Accom Allow</th><th>Attend Allow</th><th>Adhoc Allow</th><th>Action</th></tr></thead>
           <tbody>
             ${employees.map(e => `<tr><td>${e.name}</td><td>${e.designation || '—'}</td><td>${e.email || '—'}</td><td><span style="padding:2px 8px;border-radius:3px;background:${e.status === 'active' ? '#d5f4e6' : '#fadbd8'};color:${e.status === 'active' ? '#27ae60' : '#e74c3c'};font-size:12px">${e.status || 'active'}</span></td><td>${e.salary.toLocaleString('en-US', {minimumFractionDigits: 2})}</td><td><button class="btn btn-primary" onclick="openEditModal('${e.id}')" style="margin-right:5px">Edit</button><button class="btn btn-danger" onclick="deleteEmployee('${e.id}')">Delete</button></td></tr>`).join('')}
           </tbody>
