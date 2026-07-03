@@ -84,6 +84,7 @@
 
     // EDIT EMPLOYEE
     let editingEmployeeId = null;
+    let pendingDeleteId = null;
 
     function openEditModal(id) {
       const employees = getData('employees', []);
@@ -647,6 +648,18 @@
         <div id="employees-list"></div>
       </div>
 
+            <!-- DELETE CONFIRMATION MODAL -->
+      <div id="delete-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1001;align-items:center;justify-content:center;">
+        <div style="background:white;padding:40px;border-radius:8px;max-width:450px;width:90%;text-align:center;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+          <h3 style="color:#e74c3c;margin-bottom:15px;">⚠️ Delete Employee</h3>
+          <p id="delete-msg" style="font-size:16px;color:#333;margin:20px 0;line-height:1.6;"></p>
+          <div style="margin-top:30px;display:flex;gap:10px;justify-content:center;">
+            <button onclick="confirmDelete()" class="btn btn-danger" style="padding:10px 30px;font-size:16px;">Yes, Delete</button>
+            <button onclick="cancelDelete()" class="btn" style="padding:10px 30px;font-size:16px;background:#95a5a6;color:white;border:none;cursor:pointer;border-radius:4px;">Cancel</button>
+          </div>
+        </div>
+      </div>
+
       <!-- EDIT EMPLOYEE MODAL -->
       <div id="edit-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
         <div style="background:white;padding:30px;border-radius:8px;max-width:500px;width:90%;">
@@ -1048,27 +1061,40 @@
       const emp = employees.find(e => e.id === id);
       if (!emp) return;
       
-      // Show custom confirmation modal
-      const confirmed = confirm(`Delete ${emp.name}? This action cannot be undone and will permanently remove this employee from the system.`);
-      if (!confirmed) return;
+      // Show custom delete modal
+      pendingDeleteId = id;
+      document.getElementById('delete-msg').textContent = `Are you sure you want to delete ${emp.name}? This action cannot be undone and will permanently remove this employee from the system.`;
+      document.getElementById('delete-modal').style.display = 'flex';
+    }
+    
+    function confirmDelete() {
+      if (!pendingDeleteId) return;
       
-      // Delete the employee
-      const updated = employees.filter(e => e.id !== id);
+      const employees = getData('employees', []);
+      const updated = employees.filter(e => e.id !== pendingDeleteId);
       saveData('employees', updated);
       
       // Also delete from Supabase
       supabaseClient.from('employees_simple')
         .delete()
-        .eq('id', id)
+        .eq('id', pendingDeleteId)
         .then(() => {
           console.log('Deleted from Supabase');
+          document.getElementById('delete-modal').style.display = 'none';
+          pendingDeleteId = null;
           renderEmployees();
-          alert('Employee deleted successfully');
         })
         .catch(err => {
           console.error('Supabase delete error:', err);
+          document.getElementById('delete-modal').style.display = 'none';
+          pendingDeleteId = null;
           renderEmployees();
         });
+    }
+    
+    function cancelDelete() {
+      document.getElementById('delete-modal').style.display = 'none';
+      pendingDeleteId = null;
     }
 
     function editEmployee(id) {
