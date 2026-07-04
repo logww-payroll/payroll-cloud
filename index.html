@@ -763,8 +763,9 @@
           </select>
         </div>
 
-        <div style="margin:20px 0;">
+        <div style="margin:20px 0;display:flex;gap:10px;">
           <button class="btn btn-success" onclick="document.getElementById('trips-excel-input').click()">📥 Import Trips from Excel</button>
+          <button class="btn btn-info" onclick="downloadTripsTemplate()" style="background:#3498db;color:white;border:none;cursor:pointer;padding:10px 20px;border-radius:4px;">📥 Download Template</button>
           <input type="file" id="trips-excel-input" accept=".xlsx,.xls" style="display:none;" onchange="importTripsExcel(event)">
         </div>
 
@@ -1149,6 +1150,30 @@
     }
 
     // TRIPS
+    function downloadTripsTemplate() {
+      // Create sample data
+      const sampleData = [
+        { 'Employee': 'Waseem', 'Commission': 160, 'Date': '2026-06-05', 'Notes': 'ORC - Dubai' },
+        { 'Employee': 'Faisal', 'Commission': 35, 'Date': '2026-06-06', 'Notes': 'DRC' },
+        { 'Employee': 'Saroj', 'Commission': 85, 'Date': '2026-06-07', 'Notes': 'ADRC' }
+      ];
+      
+      // Create workbook
+      const ws = XLSX.utils.json_to_sheet(sampleData);
+      ws['!cols'] = [
+        { wch: 20 },  // Employee
+        { wch: 15 },  // Commission
+        { wch: 15 },  // Date
+        { wch: 30 }   // Notes
+      ];
+      
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Trips');
+      
+      // Download
+      XLSX.writeFile(wb, 'Trips_Template_June2026.xlsx');
+    }
+
     function importTripsExcel(event) {
       const file = event.target.files[0];
       if (!file) return;
