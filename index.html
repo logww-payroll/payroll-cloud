@@ -155,7 +155,7 @@
         console.log('✅ Employee updated:', name);
         closeEditModal();
         renderEmployees();
-        alert('✅ Employee updated successfully!');
+        showSuccessModal('Employee updated successfully!');
       } catch (e) {
         console.error('Update error:', e);
         alert('Error updating employee: ' + e.message);
@@ -1055,6 +1055,15 @@
       document.getElementById('emp-status').value = 'active';
       document.getElementById('emp-notes').value = '';
       renderEmployees();
+    }
+
+    function showSuccessModal(msg) {
+      document.getElementById('success-msg').textContent = msg;
+      document.getElementById('success-modal').style.display = 'flex';
+    }
+
+    function closeSuccessModal() {
+      document.getElementById('success-modal').style.display = 'none';
     }
 
     function deleteEmployee(id) {
