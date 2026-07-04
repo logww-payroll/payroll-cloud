@@ -1151,27 +1151,30 @@
 
     // TRIPS
     function downloadTripsTemplate() {
-      // Create sample data
+      // Create sample data matching your trip log format
       const sampleData = [
-        { 'Employee': 'Waseem', 'Commission': 160, 'Date': '2026-06-05', 'Notes': 'ORC - Dubai' },
-        { 'Employee': 'Faisal', 'Commission': 35, 'Date': '2026-06-06', 'Notes': 'DRC' },
-        { 'Employee': 'Saroj', 'Commission': 85, 'Date': '2026-06-07', 'Notes': 'ADRC' }
+        { 'Date': '2026-06-05', 'Driver Name': 'Waseem Khan', 'Route / Trip Type': 'ORC', 'Truck No': '57137', 'Border Exp': '', 'Diesel Exp': '', 'Other Exp': '' },
+        { 'Date': '2026-06-06', 'Driver Name': 'Faisal Rasheed', 'Route / Trip Type': 'DRC', 'Truck No': '57138', 'Border Exp': '', 'Diesel Exp': '', 'Other Exp': '' },
+        { 'Date': '2026-06-07', 'Driver Name': 'Saroj Pariyar', 'Route / Trip Type': 'ADRC', 'Truck No': '57139', 'Border Exp': '', 'Diesel Exp': '', 'Other Exp': '' }
       ];
       
       // Create workbook
       const ws = XLSX.utils.json_to_sheet(sampleData);
       ws['!cols'] = [
-        { wch: 20 },  // Employee
-        { wch: 15 },  // Commission
-        { wch: 15 },  // Date
-        { wch: 30 }   // Notes
+        { wch: 12 },  // Date
+        { wch: 25 },  // Driver Name
+        { wch: 20 },  // Route
+        { wch: 12 },  // Truck No
+        { wch: 12 },  // Border Exp
+        { wch: 12 },  // Diesel Exp
+        { wch: 12 }   // Other Exp
       ];
       
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Trips');
+      XLSX.utils.book_append_sheet(wb, ws, 'Trip Log');
       
       // Download
-      XLSX.writeFile(wb, 'Trips_Template_June2026.xlsx');
+      XLSX.writeFile(wb, 'Trip_Log_Template_June2026.xlsx');
     }
 
     function importTripsExcel(event) {
@@ -1190,24 +1193,48 @@
           const year = parseInt(document.getElementById('trips-year').value);
           let trips = getData('trips', []);
           
+          // Commission rates by route type
+          const commissionRates = {
+            'DRC': 35,
+            'ADRC': 85,
+            'ORC': 160,
+            'Impala': 25,
+            'UBF': 35,
+            'Aujan': 35,
+            'Kingsley': 25,
+            'Automech': 900,
+            'Utmost DIP-RAK': 90,
+            'DIP-Fujairah': 100,
+            'DIP-Dubai': 50
+          };
+          
           rows.forEach(row => {
             const employees = getData('employees', []);
-            const emp = employees.find(e => e.name.toLowerCase() === (row['Employee'] || row['Employee Name'] || '').toLowerCase());
+            const driverName = row['Driver Name'] || row['Driver'] || '';
+            const emp = employees.find(e => e.name.toLowerCase() === driverName.toLowerCase());
             
             if (!emp) {
-              console.warn('Employee not found:', row['Employee'] || row['Employee Name']);
+              console.warn('Employee not found:', driverName);
               return;
             }
+            
+            const routeType = row['Route / Trip Type'] || row['Route'] || '';
+            const commissionRate = commissionRates[routeType] || 0;
+            const borderExp = parseFloat(row['Border Exp'] || 0);
+            const dieselExp = parseFloat(row['Diesel Exp'] || 0);
+            const otherExp = parseFloat(row['Other Exp'] || 0);
+            const totalExpenses = borderExp + dieselExp + otherExp;
+            const netCommission = commissionRate - totalExpenses;
             
             const trip = {
               id: 'trip_' + Date.now() + Math.random().toString(36).substr(2, 9),
               empId: emp.id,
               empName: emp.name,
-              commission: parseFloat(row['Commission'] || 0),
+              commission: netCommission,
               date: row['Date'] || '',
               month: month,
               year: year,
-              notes: row['Notes'] || ''
+              notes: routeType + ' | Truck: ' + (row['Truck No'] || '')
             };
             trips.push(trip);
           });
