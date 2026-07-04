@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Logistique Payroll - Cloud</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
   <script>
     // SEND SALARY SLIP EMAILS
     async function sendSalaryEmails() {
@@ -762,6 +763,11 @@
           </select>
         </div>
 
+        <div style="margin:20px 0;">
+          <button class="btn btn-success" onclick="document.getElementById('trips-excel-input').click()">📥 Import Trips from Excel</button>
+          <input type="file" id="trips-excel-input" accept=".xlsx,.xls" style="display:none;" onchange="importTripsExcel(event)">
+        </div>
+
         <h3>Add Trip</h3>
         <div class="form-row">
           <div class="form-group">
@@ -1145,6 +1151,61 @@
     }
 
     // TRIPS
+    function importTripsExcel(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet);
+          
+          const month = parseInt(document.getElementById('trips-month').value);
+          const year = parseInt(document.getElementById('trips-year').value);
+          let trips = getData('trips', []);
+          
+          rows.forEach(row => {
+            const employees = getData('employees', []);
+            const emp = employees.find(e => e.name.toLowerCase() === (row['Employee'] || row['Employee Name'] || '').toLowerCase());
+            
+            if (!emp) {
+              console.warn('Employee not found:', row['Employee'] || row['Employee Name']);
+              return;
+            }
+            
+            const trip = {
+              id: 'trip_' + Date.now() + Math.random().toString(36).substr(2, 9),
+              empId: emp.id,
+              empName: emp.name,
+              commission: parseFloat(row['Commission'] || 0),
+              date: row['Date'] || '',
+              month: month,
+              year: year,
+              notes: row['Notes'] || ''
+            };
+            trips.push(trip);
+          });
+          
+          saveData('trips', trips);
+          rows.forEach((row, idx) => {
+            const trip = trips[trips.length - rows.length + idx];
+            supabaseClient.from('trips_simple').insert([trip]).catch(err => console.error('Error:', err));
+          });
+          
+          renderTrips();
+          showSuccessModal('✅ Imported ' + rows.length + ' trips!');
+          document.getElementById('trips-excel-input').value = '';
+        } catch (err) {
+          alert('Error importing: ' + err.message);
+          console.error(err);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
     async function addTrip() {
       const empId = document.getElementById('trip-employee').value;
       const commission = parseFloat(document.getElementById('trip-commission').value) || 0;
