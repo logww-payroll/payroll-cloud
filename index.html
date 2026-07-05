@@ -104,8 +104,10 @@
     <div class="nav">
       <button class="nav-btn active" onclick="showPage('dashboard')">📊 Dashboard</button>
       <button class="nav-btn" onclick="showPage('employees')">👥 Employees</button>
+      <button class="nav-btn" onclick="showPage('elements')">⚙️ Elements</button>
       <button class="nav-btn" onclick="showPage('trips')">🚐 Trips</button>
-      <button class="nav-btn" onclick="showPage('payslip')">📋 Payslip</button>
+      <button class="nav-btn" onclick="showPage('deductions')">📋 Deductions</button>
+      <button class="nav-btn" onclick="showPage('payslip')">💰 Payslip</button>
     </div>
     <div class="main">
 
@@ -135,6 +137,17 @@
         </div>
       </div>
 
+      <!-- ELEMENTS -->
+      <div class="page" id="page-elements">
+        <h2>Employee Master Data</h2>
+        <div class="card">
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Work Permit</th><th>Labor Card</th><th>IBAN</th><th>Email</th><th></th></tr></thead>
+            <tbody id="elements-tb"></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- TRIPS -->
       <div class="page" id="page-trips">
         <h2>Trip Log</h2>
@@ -145,6 +158,22 @@
           <table>
             <thead><tr><th>Date</th><th>Driver</th><th>Route</th><th>Commission (AED)</th></tr></thead>
             <tbody id="trips-tb"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-2)">No trips. Import Excel template.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DEDUCTIONS -->
+      <div class="page" id="page-deductions">
+        <h2>Deductions</h2>
+        <div class="btn-row">
+          <button class="btn pri" onclick="openAddDeductionModal()">➕ Add Deduction</button>
+          <select id="deductions-month" style="padding:8px;border:1px solid var(--border);border-radius:var(--r)" onchange="renderDeductions()"><option>June</option></select>
+          <select id="deductions-year" style="padding:8px;border:1px solid var(--border);border-radius:var(--r)" onchange="renderDeductions()"><option>2026</option></select>
+        </div>
+        <div class="card">
+          <table>
+            <thead><tr><th>Employee</th><th>Type</th><th>Description</th><th style="text-align:right">Amount (AED)</th><th></th></tr></thead>
+            <tbody id="deductions-tb"><tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-2)">No deductions</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -184,6 +213,47 @@
       <button class="btn" onclick="deleteEmployee()" style="margin-right:auto">🗑 Delete</button>
       <button class="btn" onclick="closeModal('modal-edit-emp')">Cancel</button>
       <button class="btn pri" onclick="saveEditEmployee()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ELEMENTS MODAL -->
+<div class="modal-bg" id="modal-edit-elements">
+  <div class="modal">
+    <div class="modal-t">Employee Master Data <button class="btn xs" onclick="closeModal('modal-edit-elements')">✕</button></div>
+    <div class="fgrp" style="margin-bottom:1rem"><label>Employee</label><input type="text" id="elem-name" readonly></div>
+    <div class="grid" style="margin-bottom:1rem">
+      <div class="fgrp"><label>Type</label><select id="elem-type"><option value="Driver">Driver</option><option value="Staff">Staff</option></select></div>
+      <div class="fgrp"><label>Email</label><input type="email" id="elem-email"></div>
+    </div>
+    <div class="grid" style="margin-bottom:1rem">
+      <div class="fgrp"><label>Work Permit</label><input type="text" id="elem-workpermit"></div>
+      <div class="fgrp"><label>Labor Card</label><input type="text" id="elem-laborcard"></div>
+    </div>
+    <div class="fgrp" style="margin-bottom:1rem"><label>IBAN</label><input type="text" id="elem-iban"></div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal('modal-edit-elements')">Cancel</button>
+      <button class="btn pri" onclick="saveElements()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD DEDUCTION MODAL -->
+<div class="modal-bg" id="modal-add-deduction">
+  <div class="modal">
+    <div class="modal-t">Add Deduction <button class="btn xs" onclick="closeModal('modal-add-deduction')">✕</button></div>
+    <div class="grid" style="margin-bottom:1rem">
+      <div class="fgrp"><label>Employee</label><select id="ded-emp"><option value="">-- Select --</option></select></div>
+      <div class="fgrp"><label>Month</label><select id="ded-month"><option>June</option></select></div>
+    </div>
+    <div class="grid" style="margin-bottom:1rem">
+      <div class="fgrp"><label>Type</label><select id="ded-type"><option value="">-- Select --</option><option value="fine">Salik/Fine</option><option value="advance">Advance Salary</option><option value="lwp">Leave w/o Pay</option><option value="other">Other</option></select></div>
+      <div class="fgrp"><label>Amount (AED)</label><input type="number" id="ded-amt" min="0"></div>
+    </div>
+    <div class="fgrp" style="margin-bottom:1rem"><label>Description</label><input type="text" id="ded-desc" placeholder="e.g., Salik fine - 5 June"></div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal('modal-add-deduction')">Cancel</button>
+      <button class="btn pri" onclick="saveDeduction()">Add</button>
     </div>
   </div>
 </div>
@@ -231,17 +301,17 @@
 
 <script>
 const defaultEmployees = [
-  {id: "E001", name: "JUGRAJ SINGH TARSEM SINGH", desig: "Driver", basic: 0, iban: "", inactive: false},
-  {id: "E002", name: "INDERJEET SINGH JASWANT SINGH", desig: "Driver", basic: 0, iban: "", inactive: false},
-  {id: "E003", name: "WASEEM KHAN ABDUL WAHAB", desig: "Driver", basic: 1300, iban: "", inactive: false},
-  {id: "E004", name: "FAISAL RASHEED AWAN ABDUL RASHEED", desig: "Driver", basic: 1300, iban: "", inactive: false},
-  {id: "E005", name: "SAJID GULZAR GULZAR NASEEM", desig: "Driver", basic: 1300, iban: "", inactive: false},
-  {id: "E006", name: "MUHAMMAD ISHTIAQ GUL AKBAR", desig: "Driver", basic: 1300, iban: "", inactive: false},
-  {id: "E007", name: "SAROJ PARIYAR", desig: "Driver", basic: 1300, iban: "", inactive: false},
-  {id: "E008", name: "BIR BAHADUR BHUJEL DHAN BAHADUR BHUJEL", desig: "Driver", basic: 1300, iban: "", inactive: false},
-  {id: "E009", name: "SURJIT SINGH DALIP SINGH", desig: "Driver", basic: 0, iban: "", inactive: false},
-  {id: "E010", name: "IRFAN ZAFAR ZAFAR IQBAL", desig: "Sales Associate", basic: 1300, iban: "", inactive: false},
-  {id: "E011", name: "JAINUL RAFIQ MOHAMMAD RAFIQ", desig: "Sales Associate", basic: 1300, iban: "", inactive: false}
+  {id: "E001", name: "JUGRAJ SINGH TARSEM SINGH", desig: "Driver", type: "Driver", basic: 0, iban: "", workpermit: "", laborcard: "", email: "", inactive: false},
+  {id: "E002", name: "INDERJEET SINGH JASWANT SINGH", desig: "Driver", type: "Driver", basic: 0, iban: "", workpermit: "", laborcard: "", email: "", inactive: false},
+  {id: "E003", name: "WASEEM KHAN ABDUL WAHAB", desig: "Driver", type: "Driver", basic: 1300, iban: "", workpermit: "", laborcard: "", email: "", inactive: false},
+  {id: "E004", name: "FAISAL RASHEED AWAN ABDUL RASHEED", desig: "Driver", type: "Driver", basic: 1300, iban: "", workpermit: "", laborcard: "", email: "", inactive: false},
+  {id: "E005", name: "SAJID GULZAR GULZAR NASEEM", desig: "Driver", type: "Driver", basic: 1300, iban: "", workpermit: "", laborcard: "", email: "", inactive: false},
+  {id: "E006", name: "MUHAMMAD ISHTIAQ GUL AKBAR", desig: "Driver", type: "Driver", basic: 1300, iban: "", workpermit: "", laborcard: "", email: "", inactive: false},
+  {id: "E007", name: "SAROJ PARIYAR", desig: "Driver", type: "Driver", basic: 1300, iban: "", workpermit: "", laborcard: "", email: "", inactive: false},
+  {id: "E008", name: "BIR BAHADUR BHUJEL DHAN BAHADUR BHUJEL", desig: "Driver", type: "Driver", basic: 1300, iban: "", workpermit: "", laborcard: "", email: "", inactive: false},
+  {id: "E009", name: "SURJIT SINGH DALIP SINGH", desig: "Driver", type: "Driver", basic: 0, iban: "", workpermit: "", laborcard: "", email: "", inactive: false},
+  {id: "E010", name: "IRFAN ZAFAR ZAFAR IQBAL", desig: "Sales Associate", type: "Staff", basic: 1300, iban: "", workpermit: "", laborcard: "", email: "", inactive: false},
+  {id: "E011", name: "JAINUL RAFIQ MOHAMMAD RAFIQ", desig: "Sales Associate", type: "Staff", basic: 1300, iban: "", workpermit: "", laborcard: "", email: "", inactive: false}
 ];
 
 let employees = [];
@@ -284,6 +354,8 @@ function showPage(name){
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
   if(name === 'payslip') renderPayslip();
+  if(name === 'elements') renderElements();
+  if(name === 'deductions') renderDeductions();
 }
 
 function openModal(id){ document.getElementById(id).classList.add('open'); }
@@ -380,6 +452,126 @@ function deleteEmployee(){
   initPayslip();
   closeModal('modal-edit-emp');
   alert('Deleted');
+}
+
+function renderElements(){
+  const tb = document.getElementById('elements-tb');
+  tb.innerHTML = '';
+  DB.employees.forEach(emp => {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td><strong>${emp.name}</strong></td><td>${emp.type}</td><td>${emp.workpermit || '—'}</td><td>${emp.laborcard || '—'}</td><td>${emp.iban || '—'}</td><td>${emp.email || '—'}</td><td><button class="btn xs" onclick="openEditElementsModal('${emp.id}')">Edit</button></td>`;
+    tb.appendChild(row);
+  });
+}
+
+function openEditElementsModal(empId){
+  const emp = DB.employees.find(e => e.id === empId);
+  if(!emp) return;
+  
+  document.getElementById('elem-name').value = emp.name;
+  document.getElementById('elem-type').value = emp.type;
+  document.getElementById('elem-email').value = emp.email;
+  document.getElementById('elem-workpermit').value = emp.workpermit;
+  document.getElementById('elem-laborcard').value = emp.laborcard;
+  document.getElementById('elem-iban').value = emp.iban;
+  DB.editingEmpId = empId;
+  openModal('modal-edit-elements');
+}
+
+function saveElements(){
+  const type = document.getElementById('elem-type').value;
+  const email = document.getElementById('elem-email').value.trim();
+  const workpermit = document.getElementById('elem-workpermit').value.trim();
+  const laborcard = document.getElementById('elem-laborcard').value.trim();
+  const iban = document.getElementById('elem-iban').value.trim();
+  
+  const emp = DB.employees.find(e => e.id === DB.editingEmpId);
+  if(emp){
+    emp.type = type;
+    emp.email = email;
+    emp.workpermit = workpermit;
+    emp.laborcard = laborcard;
+    emp.iban = iban;
+  }
+  
+  saveData();
+  renderElements();
+  closeModal('modal-edit-elements');
+  alert('Saved');
+}
+
+function renderDeductions(){
+  const tb = document.getElementById('deductions-tb');
+  const month = document.getElementById('deductions-month').value;
+  const year = parseInt(document.getElementById('deductions-year').value);
+  tb.innerHTML = '';
+  
+  const deductions = DB.components.filter(c => 
+    ['fine','advance','lwp','other'].includes(c.type) && c.month === month && c.year === year
+  );
+  
+  if(deductions.length === 0){
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-2)">No deductions</td></tr>';
+    return;
+  }
+  
+  deductions.forEach(ded => {
+    const row = document.createElement('tr');
+    const typeLabel = {fine: 'Salik/Fine', advance: 'Advance Salary', lwp: 'Leave w/o Pay', other: 'Other'}[ded.type];
+    row.innerHTML = `<td>${ded.emp}</td><td>${typeLabel}</td><td>${ded.description}</td><td style="text-align:right">${ded.amount.toFixed(2)} AED</td><td><button class="btn xs" onclick="deleteDeduction('${ded.id}')">Delete</button></td>`;
+    tb.appendChild(row);
+  });
+}
+
+function openAddDeductionModal(){
+  const empSelect = document.getElementById('ded-emp');
+  empSelect.innerHTML = '<option value="">-- Select --</option>';
+  const active = DB.employees.filter(e => !e.inactive);
+  active.forEach(emp => {
+    const opt = document.createElement('option');
+    opt.value = emp.name;
+    opt.textContent = emp.name;
+    empSelect.appendChild(opt);
+  });
+  
+  const monthSelect = document.getElementById('ded-month');
+  monthSelect.innerHTML = '';
+  ['January','February','March','April','May','June','July','August','September','October','November','December'].forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    if(m === 'June') opt.selected = true;
+    monthSelect.appendChild(opt);
+  });
+  
+  openModal('modal-add-deduction');
+}
+
+function saveDeduction(){
+  const emp = document.getElementById('ded-emp').value;
+  const month = document.getElementById('ded-month').value;
+  const type = document.getElementById('ded-type').value;
+  const amt = parseFloat(document.getElementById('ded-amt').value);
+  const desc = document.getElementById('ded-desc').value.trim();
+  
+  if(!emp || !type || !amt){ alert('Fill required fields'); return; }
+  
+  DB.components.push({
+    emp, month, year: 2026, type, amount: amt, description: desc, id: Math.random().toString(36).substr(2, 9)
+  });
+  
+  saveData();
+  renderDeductions();
+  closeModal('modal-add-deduction');
+  alert('Deduction added');
+}
+
+function deleteDeduction(id){
+  if(confirm('Delete this deduction?')){
+    DB.components = DB.components.filter(c => c.id !== id);
+    saveData();
+    renderDeductions();
+  }
 }
 
 function handleImportFile(file){
@@ -605,11 +797,33 @@ window.onload = () => {
     loadData();
     renderEmployees();
     initPayslip();
+    initDeductions();
     updateDashboard();
   } else {
     document.getElementById('login-screen').style.display = 'flex';
   }
 };
+
+function initDeductions(){
+  const monthSelect = document.getElementById('deductions-month');
+  monthSelect.innerHTML = '';
+  ['January','February','March','April','May','June','July','August','September','October','November','December'].forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    if(m === 'June') opt.selected = true;
+    monthSelect.appendChild(opt);
+  });
+  
+  const yearSelect = document.getElementById('deductions-year');
+  for(let y = 2024; y <= 2027; y++){
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if(y === 2026) opt.selected = true;
+    yearSelect.appendChild(opt);
+  }
+}
 </script>
 
 </body>
