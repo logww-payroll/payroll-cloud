@@ -532,6 +532,83 @@ let DB = {
   deductions: []
 };
 
+// ============================================================================
+// LOGIN (local demo)
+// ============================================================================
+function doLogin(){
+  const email = document.getElementById('login-email').value;
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-err');
+  
+  if(!email || !pass){
+    errEl.textContent = 'Enter email and password';
+    return;
+  }
+  
+  // For demo: accept any email/pass combo
+  sessionStorage.setItem('loggedIn', JSON.stringify({email, loginTime: Date.now()}));
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('conn-lbl').textContent = email;
+  showPage('dashboard');
+}
+
+function doLogout(){
+  if(confirm('Sign out?')){
+    sessionStorage.removeItem('loggedIn');
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-err').textContent = '';
+  }
+}
+
+function checkLogin(){
+  const logged = sessionStorage.getItem('loggedIn');
+  if(!logged){
+    document.getElementById('login-screen').style.display = 'flex';
+  } else {
+    const user = JSON.parse(logged);
+    document.getElementById('conn-lbl').textContent = user.email;
+    document.getElementById('login-screen').style.display = 'none';
+  }
+}
+
+// Navigation
+function showPage(pageName){
+  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+  const page = document.getElementById('page-' + pageName);
+  if(page) page.style.display = 'block';
+  
+  // Update active nav button
+  document.querySelectorAll('.nav-btn').forEach(b => b.style.opacity = '0.5');
+  const activeBtn = document.querySelector(`[onclick*="showPage('${pageName}')"]`);
+  if(activeBtn) activeBtn.style.opacity = '1';
+}
+
+// Modal helpers
+function openM(id){
+  const modal = document.getElementById(id);
+  if(modal) modal.style.display = 'flex';
+}
+
+function closeM(id){
+  const modal = document.getElementById(id);
+  if(modal) modal.style.display = 'none';
+}
+
+// Utility
+function uid(){
+  return 'u' + Math.random().toString(36).substr(2, 9);
+}
+
+function saveToDB(table, data){
+  localStorage.setItem('db_' + table, JSON.stringify(data));
+}
+
+// Load on startup
+checkLogin();
+
+
 
 // ============================================================================
 // PATCHED: parseWorkbook() — Better employee matching + error handling
