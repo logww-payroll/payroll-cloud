@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Logistique Payroll</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -34,7 +35,7 @@
     .nav-btn { padding: 12px 16px; border: none; background: none; cursor: pointer; font-size: 13px; border-bottom: 2px solid transparent; color: var(--text-2); }
     .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
     .logout-btn { background: #E74C3C; color: white; padding: 8px 16px; border-radius: var(--r); border: none; cursor: pointer; font-size: 12px; font-weight: 600; }
-    .main { padding: 2rem; max-width: 1200px; }
+    .main { padding: 2rem; max-width: 1400px; }
     .page { display: none; }
     .page.active { display: block; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; margin-bottom: 1rem; }
@@ -47,11 +48,24 @@
     .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--r); border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer; font-weight: 500; }
     .btn.pri { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
     .btn.pri:hover { opacity: 0.88; }
-    .btn-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .btn.sm { padding: 5px 10px; font-size: 12px; }
+    .btn.xs { padding: 4px 8px; font-size: 11px; }
+    .btn-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
     .metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1rem 1.25rem; text-align: center; }
     .metric-l { font-size: 11px; color: var(--text-2); font-weight: 500; margin-bottom: 6px; }
     .metric-v { font-size: 22px; font-weight: 600; }
     .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.75rem; }
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 200; display: none; align-items: center; justify-content: center; }
+    .modal-bg.open { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--r); padding: 1.75rem; width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,.12); }
+    .modal-t { font-size: 16px; font-weight: 600; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+    .modal-ft { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .fgrp { display: flex; flex-direction: column; gap: 5px; }
+    .fgrp label { font-size: 12px; font-weight: 600; color: var(--text-2); }
+    .fgrp input, .fgrp select { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--r); font-size: 13px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .notice { display: flex; gap: 10px; align-items: flex-start; padding: 0.875rem 1rem; border-radius: var(--r); margin-bottom: 1.25rem; font-size: 13px; border: 1px solid var(--border); }
+    .notice.info { background: #EBF2FF; color: #1A4B8C; border-color: #B8D0F5; }
   </style>
 </head>
 <body>
@@ -99,9 +113,9 @@
       <div class="page active" id="page-dashboard">
         <h2>Dashboard</h2>
         <div class="metrics">
-          <div class="metric"><div class="metric-l">Total Employees</div><div class="metric-v" id="metric-emp">11</div></div>
-          <div class="metric"><div class="metric-l">Total Trips</div><div class="metric-v">0</div></div>
-          <div class="metric"><div class="metric-l">Outstanding Ledger</div><div class="metric-v">0 AED</div></div>
+          <div class="metric"><div class="metric-l">Total Employees</div><div class="metric-v">11</div></div>
+          <div class="metric"><div class="metric-l">Total Trips</div><div class="metric-v" id="metric-trips">0</div></div>
+          <div class="metric"><div class="metric-l">Outstanding Ledger</div><div class="metric-v" id="metric-ledger">0 AED</div></div>
           <div class="metric"><div class="metric-l">Payroll Runs</div><div class="metric-v">0</div></div>
         </div>
       </div>
@@ -121,16 +135,21 @@
       <div class="page" id="page-trips">
         <h2>Trip Log</h2>
         <div class="btn-row">
-          <button class="btn pri" onclick="alert('Import Excel to add trips')">📥 Import Excel</button>
+          <button class="btn pri" onclick="openImportModal()">📥 Import Excel</button>
         </div>
-        <div class="card" id="trips-card"><p style="text-align:center;color:var(--text-2);padding:2rem">No trips logged. Import from Excel template.</p></div>
+        <div class="card">
+          <table>
+            <thead><tr><th>Date</th><th>Driver</th><th>Route</th><th>Commission (AED)</th><th></th></tr></thead>
+            <tbody id="trips-tb"><tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-2)">No trips. Import Excel template.</td></tr></tbody>
+          </table>
+        </div>
       </div>
 
       <!-- LEDGER -->
       <div class="page" id="page-ledger">
         <h2>Employee Ledger</h2>
         <div class="btn-row">
-          <button class="btn pri" onclick="alert('Add payable')">➕ Add Payable</button>
+          <button class="btn pri" onclick="openAddPayableModal()">➕ Add Payable</button>
         </div>
         <div class="card">
           <table>
@@ -147,7 +166,7 @@
           <label>Period: <select id="run-month" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)"><option>June</option></select></label>
           <select id="run-year" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)"><option>2026</option></select>
         </div>
-        <div class="card"><p style="text-align:center;color:var(--text-2);padding:2rem">Import trips and deductions first, then run payroll here.</p></div>
+        <div class="card"><p style="text-align:center;color:var(--text-2);padding:2rem">Import trips and deductions first.</p></div>
       </div>
 
       <!-- HISTORY -->
@@ -160,8 +179,91 @@
   </div>
 </div>
 
+<!-- IMPORT MODAL -->
+<div class="modal-bg" id="modal-import">
+  <div class="modal">
+    <div class="modal-t">
+      Import Trips from Excel
+      <button class="btn xs" onclick="closeModal('modal-import')">✕</button>
+    </div>
+    <div class="notice info">
+      <span>Upload your Excel file with Trip Log sheet. Driver names must match exactly with employee list.</span>
+    </div>
+    <div style="border:2px dashed var(--border);border-radius:var(--r);padding:2rem;text-align:center;cursor:pointer;margin-bottom:1rem" onclick="document.getElementById('import-file').click()">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">Click to select or drag and drop</div>
+      <div style="font-size:11px;color:var(--text-2)">.xlsx files only</div>
+    </div>
+    <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="handleImportFile(this.files[0])">
+    <div id="import-preview" style="display:none">
+      <div class="card-t">Found <span id="import-count">0</span> trips</div>
+      <table style="margin-bottom:1rem;font-size:12px">
+        <thead><tr><th>Date</th><th>Driver</th><th>Route</th><th>Commission</th></tr></thead>
+        <tbody id="import-tb"></tbody>
+      </table>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal('modal-import')">Cancel</button>
+      <button class="btn pri" id="import-btn" onclick="confirmImport()" style="display:none">Import trips</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PAYABLE MODAL -->
+<div class="modal-bg" id="modal-payable">
+  <div class="modal">
+    <div class="modal-t">
+      Add Payable
+      <button class="btn xs" onclick="closeModal('modal-payable')">✕</button>
+    </div>
+    <div class="grid" style="margin-bottom:1rem">
+      <div class="fgrp"><label>Employee</label><select id="payable-emp"><option value="">-- Select --</option></select></div>
+      <div class="fgrp"><label>Date</label><input type="date" id="payable-date"></div>
+      <div class="fgrp"><label>Type</label><select id="payable-type"><option value="">-- Select --</option><option value="fine">Fine / Salik</option><option value="advance">Advance Salary</option><option value="lwp">Leave w/o Pay</option><option value="other">Other</option></select></div>
+      <div class="fgrp"><label>Amount (AED)</label><input type="number" id="payable-amt" min="0"></div>
+    </div>
+    <div class="fgrp" style="margin-bottom:1rem"><label>Description</label><input type="text" id="payable-desc" placeholder="e.g., Salik fine - Route 11"></div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal('modal-payable')">Cancel</button>
+      <button class="btn pri" onclick="savePayable()">Add payable</button>
+    </div>
+  </div>
+</div>
+
+<!-- LEDGER DETAIL MODAL -->
+<div class="modal-bg" id="modal-ledger-detail">
+  <div class="modal" style="width:800px">
+    <div class="modal-t">
+      <div id="ledger-emp-name">Employee Ledger</div>
+      <button class="btn xs" onclick="closeModal('modal-ledger-detail')">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:11px;color:var(--text-2);font-weight:600;margin-bottom:6px">Current Balance</div>
+        <div style="font-size:24px;font-weight:700" id="ledger-bal">0 AED</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-2);font-weight:600;margin-bottom:6px">View Month</div>
+        <select id="ledger-month-sel" onchange="refreshLedgerMonth()" style="padding:8px;border:1px solid var(--border);border-radius:var(--r)"></select>
+      </div>
+    </div>
+    <div class="card-t">Deductions & Recoveries</div>
+    <table style="margin-bottom:1.5rem;font-size:12px">
+      <thead><tr><th>Date</th><th>Type</th><th>Description</th><th style="text-align:right">Amount (AED)</th></tr></thead>
+      <tbody id="ledger-deds-tb"><tr><td colspan="4" style="text-align:center;padding:1rem;color:var(--text-2)">Select a month</td></tr></tbody>
+    </table>
+    <div class="card-t">Manual Recovery</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1rem">
+      <div class="fgrp"><label>Date</label><input type="date" id="recovery-date"></div>
+      <div class="fgrp"><label>Amount (AED)</label><input type="number" id="recovery-amt" min="0"></div>
+      <div class="fgrp"><label>&nbsp;</label><button class="btn pri" onclick="addRecovery()" style="width:100%">Add recovery</button></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal('modal-ledger-detail')">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// Data
 const employees = [
   "JUGRAJ SINGH TARSEM SINGH",
   "INDERJEET SINGH JASWANT SINGH",
@@ -176,19 +278,18 @@ const employees = [
   "JAINUL RAFIQ MOHAMMAD RAFIQ"
 ];
 
-// Functions
+let DB = { trips: [], ledger: [], importData: null, currentLedgerId: null };
+
 function doLogin(){
   const email = document.getElementById('login-email').value;
   const pass = document.getElementById('login-pass').value;
-  if(!email || !pass){
-    alert('Enter email and password');
-    return;
-  }
+  if(!email || !pass){ alert('Enter email and password'); return; }
   sessionStorage.setItem('loggedIn', email);
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('active');
   document.getElementById('user-email').textContent = email;
   renderEmployees();
+  loadData();
 }
 
 function doLogout(){
@@ -202,22 +303,213 @@ function doLogout(){
 function showPage(name){
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
+  if(name === 'ledger') renderLedger();
+  if(name === 'trips') renderTrips();
+  if(name === 'dashboard') updateDashboard();
 }
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
 function renderEmployees(){
   const tb = document.getElementById('emp-tb');
   tb.innerHTML = '';
   employees.forEach(name => {
     const row = document.createElement('tr');
-    row.innerHTML = `<td><strong>${name}</strong></td><td>Driver</td><td>0</td><td>—</td><td><button class="btn">Edit</button></td>`;
+    row.innerHTML = `<td><strong>${name}</strong></td><td>Driver</td><td>0</td><td>—</td><td><button class="btn sm">Edit</button></td>`;
     tb.appendChild(row);
   });
 }
 
-// Check login on load
+function renderTrips(){
+  const tb = document.getElementById('trips-tb');
+  tb.innerHTML = '';
+  if(DB.trips.length === 0){
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-2)">No trips. Import Excel template.</td></tr>';
+    return;
+  }
+  DB.trips.forEach(t => {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td>${t.date}</td><td>${t.driver}</td><td>${t.route}</td><td>${t.commission}</td><td><button class="btn xs">Delete</button></td>`;
+    tb.appendChild(row);
+  });
+}
+
+function renderLedger(){
+  const tb = document.getElementById('ledger-tb');
+  tb.innerHTML = '';
+  if(DB.ledger.length === 0){
+    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-2)">No payables</td></tr>';
+    return;
+  }
+  DB.ledger.forEach(ld => {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td>${ld.emp}</td><td style="text-align:right"><strong>${ld.balance.toFixed(2)}</strong></td><td style="text-align:center">${new Date(ld.updated).toLocaleDateString()}</td><td><button class="btn xs" onclick="openLedgerDetail('${ld.id}')">View</button></td>`;
+    tb.appendChild(row);
+  });
+}
+
+function handleImportFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const wb = XLSX.read(e.target.result, {type: 'binary'});
+    const ws = wb.Sheets['Trip Log'];
+    if(!ws){ alert('No "Trip Log" sheet found'); return; }
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+    const trips = [];
+    for(let i = 5; i < rows.length; i++){
+      const row = rows[i];
+      if(!row || !row[2]) break;
+      trips.push({
+        date: row[1] ? new Date(row[1]).toLocaleDateString() : '',
+        driver: (row[2] || '').toString().trim(),
+        route: (row[4] || '').toString().trim(),
+        commission: parseFloat(row[6]) || 0
+      });
+    }
+    DB.importData = trips;
+    document.getElementById('import-count').textContent = trips.length;
+    const itb = document.getElementById('import-tb');
+    itb.innerHTML = '';
+    trips.slice(0, 10).forEach(t => {
+      const row = document.createElement('tr');
+      row.innerHTML = `<td>${t.date}</td><td>${t.driver}</td><td>${t.route}</td><td>${t.commission}</td>`;
+      itb.appendChild(row);
+    });
+    document.getElementById('import-preview').style.display = 'block';
+    document.getElementById('import-btn').style.display = 'block';
+  };
+  reader.readAsBinaryString(file);
+}
+
+function confirmImport(){
+  if(!DB.importData) return;
+  DB.trips = DB.importData;
+  saveData();
+  renderTrips();
+  alert(DB.trips.length + ' trips imported');
+  closeModal('modal-import');
+}
+
+function openImportModal(){ openModal('modal-import'); }
+
+function openAddPayableModal(){
+  document.getElementById('payable-emp').innerHTML = '<option value="">-- Select --</option>';
+  employees.forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e;
+    opt.textContent = e;
+    document.getElementById('payable-emp').appendChild(opt);
+  });
+  document.getElementById('payable-date').valueAsDate = new Date();
+  openModal('modal-payable');
+}
+
+function savePayable(){
+  const emp = document.getElementById('payable-emp').value;
+  const date = document.getElementById('payable-date').value;
+  const type = document.getElementById('payable-type').value;
+  const amt = parseFloat(document.getElementById('payable-amt').value);
+  const desc = document.getElementById('payable-desc').value;
+  if(!emp || !date || !type || !amt){ alert('Fill all fields'); return; }
+  let ld = DB.ledger.find(l => l.emp === emp);
+  if(!ld){
+    ld = {id: 'ld-' + Math.random().toString(36).substr(2, 9), emp, balance: amt, updated: new Date(), deductions: []};
+    DB.ledger.push(ld);
+  } else {
+    ld.balance += amt;
+    ld.updated = new Date();
+  }
+  ld.deductions.push({date, type, description: desc, amount: amt});
+  saveData();
+  renderLedger();
+  closeModal('modal-payable');
+  alert(amt.toFixed(2) + ' AED added');
+}
+
+function openLedgerDetail(id){
+  DB.currentLedgerId = id;
+  const ld = DB.ledger.find(l => l.id === id);
+  if(!ld) return;
+  document.getElementById('ledger-emp-name').textContent = ld.emp + ' — Ledger';
+  document.getElementById('ledger-bal').textContent = ld.balance.toFixed(2) + ' AED';
+  const sel = document.getElementById('ledger-month-sel');
+  sel.innerHTML = '<option value="">-- Select month --</option>';
+  const now = new Date();
+  for(let m = 0; m < 12; m++){
+    const d = new Date(now.getFullYear(), now.getMonth() - m);
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const yr = d.getFullYear();
+    const opt = document.createElement('option');
+    opt.value = mo + '/' + yr;
+    opt.textContent = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + yr;
+    sel.appendChild(opt);
+  }
+  document.getElementById('recovery-date').valueAsDate = new Date();
+  openModal('modal-ledger-detail');
+}
+
+function refreshLedgerMonth(){
+  const ld = DB.ledger.find(l => l.id === DB.currentLedgerId);
+  if(!ld) return;
+  const monthVal = document.getElementById('ledger-month-sel').value;
+  if(!monthVal){
+    document.getElementById('ledger-deds-tb').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1rem">Select a month</td></tr>';
+    return;
+  }
+  const [mo, yr] = monthVal.split('/');
+  const filtered = ld.deductions.filter(d => {
+    const dDate = new Date(d.date);
+    return String(dDate.getMonth() + 1).padStart(2, '0') === mo && dDate.getFullYear().toString() === yr;
+  });
+  const tb = document.getElementById('ledger-deds-tb');
+  tb.innerHTML = '';
+  if(filtered.length === 0){
+    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1rem">No deductions this month</td></tr>';
+    return;
+  }
+  filtered.forEach(d => {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td>${new Date(d.date).toLocaleDateString()}</td><td>${d.type}</td><td>${d.description}</td><td style="text-align:right">${d.amount.toFixed(2)}</td>`;
+    tb.appendChild(row);
+  });
+}
+
+function addRecovery(){
+  const ld = DB.ledger.find(l => l.id === DB.currentLedgerId);
+  if(!ld) return;
+  const date = document.getElementById('recovery-date').value;
+  const amt = parseFloat(document.getElementById('recovery-amt').value);
+  if(!date || !amt){ alert('Enter date and amount'); return; }
+  ld.balance -= amt;
+  ld.deductions.push({date, type: 'recovery', description: 'Manual recovery', amount: amt});
+  ld.updated = new Date();
+  saveData();
+  document.getElementById('ledger-bal').textContent = ld.balance.toFixed(2) + ' AED';
+  document.getElementById('recovery-amt').value = '';
+  refreshLedgerMonth();
+  alert('Recovery added');
+}
+
+function updateDashboard(){
+  document.getElementById('metric-trips').textContent = DB.trips.length;
+  const total = DB.ledger.reduce((sum, l) => sum + l.balance, 0);
+  document.getElementById('metric-ledger').textContent = total.toFixed(2) + ' AED';
+}
+
+function saveData(){
+  localStorage.setItem('payroll_trips', JSON.stringify(DB.trips));
+  localStorage.setItem('payroll_ledger', JSON.stringify(DB.ledger));
+}
+
+function loadData(){
+  DB.trips = JSON.parse(localStorage.getItem('payroll_trips') || '[]');
+  DB.ledger = JSON.parse(localStorage.getItem('payroll_ledger') || '[]');
+}
+
 window.onload = () => {
   const loggedIn = sessionStorage.getItem('loggedIn');
   if(loggedIn){
@@ -225,6 +517,8 @@ window.onload = () => {
     document.getElementById('app').classList.add('active');
     document.getElementById('user-email').textContent = loggedIn;
     renderEmployees();
+    loadData();
+    updateDashboard();
   } else {
     document.getElementById('login-screen').style.display = 'flex';
   }
