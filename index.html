@@ -585,6 +585,12 @@ function showPage(pageName){
   document.querySelectorAll('.nav-btn').forEach(b => b.style.opacity = '0.5');
   const activeBtn = document.querySelector(`[onclick*="showPage('${pageName}')"]`);
   if(activeBtn) activeBtn.style.opacity = '1';
+  
+  // Render page content
+  if(pageName === 'employees') renderEmployees();
+  if(pageName === 'dashboard') renderDashboard();
+  if(pageName === 'trips') renderTrips();
+  if(pageName === 'ledger') initLedger();
 }
 
 // Modal helpers
@@ -609,6 +615,43 @@ function saveToDB(table, data){
 
 // Load on startup
 checkLogin();
+
+// Page rendering
+function renderEmployees(){
+  const tb = document.getElementById('emp-tb');
+  if(!tb) return;
+  tb.innerHTML = '';
+  
+  DB.employees.forEach(e => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><strong>${e.name}</strong></td>
+      <td>${e.designation}</td>
+      <td>${e.basic_salary}</td>
+      <td>${e.email}</td>
+      <td><button class="btn xs">Edit</button></td>
+    `;
+    tb.appendChild(row);
+  });
+}
+
+function renderTrips(){
+  const list = document.getElementById('trips-list');
+  if(!list) list.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-3)">No trips logged</div>';
+}
+
+function renderDashboard(){
+  const metrics = document.getElementById('dash-m');
+  if(!metrics){
+    metrics.innerHTML = `
+      <div class="metric"><div class="metric-l">Total Employees</div><div class="metric-v">${DB.employees.length}</div></div>
+      <div class="metric"><div class="metric-l">Total Trips</div><div class="metric-v">0</div></div>
+      <div class="metric"><div class="metric-l">Outstanding Ledger</div><div class="metric-v">0 AED</div></div>
+      <div class="metric"><div class="metric-l">Payroll Runs</div><div class="metric-v">0</div></div>
+    `;
+  }
+}
+
 
 
 
