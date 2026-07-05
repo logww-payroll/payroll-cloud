@@ -508,6 +508,31 @@ let sbUrl='https://yutqsafeijxushuflwfd.supabase.co';
 let sbKey='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2bmxxc2R3b3ppZWlnYWV1YW13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDA4NDUsImV4cCI6MjA5NzcxNjg0NX0.OAIgdmBTP_Bl_DF-71ohHdoIHResh-RptlasLo4gaNY';
 let runOverrides={};
 
+// Default 11 employees from Excel template
+const DEFAULT_EMPLOYEES = [
+  {id:"EMP-001",name:"JUGRAJ SINGH TARSEM SINGH",designation:"Driver",basic_salary:0,email:""},
+  {id:"EMP-002",name:"INDERJEET SINGH JASWANT SINGH",designation:"Driver",basic_salary:0,email:""},
+  {id:"EMP-003",name:"WASEEM KHAN ABDUL WAHAB",designation:"Driver",basic_salary:0,email:""},
+  {id:"EMP-004",name:"FAISAL RASHEED AWAN ABDUL RASHEED",designation:"Driver",basic_salary:0,email:""},
+  {id:"EMP-005",name:"SAJID GULZAR GULZAR NASEEM",designation:"Driver",basic_salary:0,email:""},
+  {id:"EMP-006",name:"MUHAMMAD ISHTIAQ GUL AKBAR",designation:"Driver",basic_salary:0,email:""},
+  {id:"EMP-007",name:"SAROJ PARIYAR",designation:"Driver",basic_salary:0,email:""},
+  {id:"EMP-008",name:"BIR BAHADUR BHUJEL DHAN BAHADUR BHUJEL",designation:"Driver",basic_salary:0,email:""},
+  {id:"EMP-009",name:"SURJIT SINGH DALIP SINGH",designation:"Driver",basic_salary:0,email:""},
+  {id:"EMP-010",name:"IRFAN ZAFAR ZAFAR IQBAL",designation:"Driver",basic_salary:0,email:""},
+  {id:"EMP-011",name:"JAINUL RAFIQ MOHAMMAD RAFIQ",designation:"Driver",basic_salary:0,email:""}
+];
+
+// Global DB object
+let DB = {
+  employees: DEFAULT_EMPLOYEES,
+  ledger: [],
+  trips: [],
+  rates: [],
+  deductions: []
+};
+
+
 // ============================================================================
 // PATCHED: parseWorkbook() — Better employee matching + error handling
 // ============================================================================
