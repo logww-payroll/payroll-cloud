@@ -549,6 +549,8 @@ function doLogin(){
   sessionStorage.setItem('loggedIn', JSON.stringify({email, loginTime: Date.now()}));
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('conn-lbl').textContent = email;
+  const logoutBtn = document.getElementById('logout-btn');
+  if(logoutBtn) logoutBtn.style.display = 'block';
   showPage('dashboard');
 }
 
