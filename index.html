@@ -232,6 +232,7 @@
     </div>
     <div class="fgrp" style="margin-bottom:1rem"><label>IBAN</label><input type="text" id="elem-iban"></div>
     <div class="modal-ft">
+      <button class="btn" id="elem-delete-btn" onclick="deleteElementEmployee()" style="margin-right:auto">🗑 Delete</button>
       <button class="btn" onclick="closeModal('modal-edit-elements')">Cancel</button>
       <button class="btn pri" onclick="saveElements()">Save</button>
     </div>
@@ -253,7 +254,7 @@
     <div class="fgrp" style="margin-bottom:1rem"><label>Description</label><input type="text" id="ded-desc" placeholder="e.g., Salik fine - 5 June"></div>
     <div class="modal-ft">
       <button class="btn" onclick="closeModal('modal-add-deduction')">Cancel</button>
-      <button class="btn pri" onclick="saveDeduction()">Add</button>
+      <button class="btn pri" onclick="saveDeduction()">Add Deduction</button>
     </div>
   </div>
 </div>
@@ -291,10 +292,10 @@
       <div class="fgrp"><label>Type</label><select id="comp-type"><option value="">-- Select --</option><option value="attendance">Attendance Allowance</option><option value="adhoc">Adhoc Allowance</option><option value="fine">Salik/Fine</option><option value="advance">Advance Salary</option><option value="lwp">Leave w/o Pay</option><option value="other">Other</option></select></div>
       <div class="fgrp"><label>Amount (AED)</label><input type="number" id="comp-amt" min="0"></div>
     </div>
-    <div class="fgrp" style="margin-bottom:1rem"><label>Description</label><input type="text" id="comp-desc" placeholder="e.g., Salik fine - 5 June"></div>
+    <div class="fgrp" style="margin-bottom:1rem"><label>Description</label><input type="text" id="comp-desc" placeholder="e.g., Bonus for June"></div>
     <div class="modal-ft">
       <button class="btn" onclick="closeModal('modal-component')">Cancel</button>
-      <button class="btn pri" onclick="saveComponent()">Add component</button>
+      <button class="btn pri" onclick="saveComponent()">Add</button>
     </div>
   </div>
 </div>
@@ -498,6 +499,19 @@ function saveElements(){
   renderElements();
   closeModal('modal-edit-elements');
   alert('Saved');
+}
+
+function deleteElementEmployee(){
+  if(!DB.editingEmpId) return;
+  if(!confirm('Delete this employee? (Cannot be undone)')){
+    return;
+  }
+  DB.employees = DB.employees.filter(e => e.id !== DB.editingEmpId);
+  saveData();
+  renderElements();
+  initPayslip();
+  closeModal('modal-edit-elements');
+  alert('Deleted');
 }
 
 function renderDeductions(){
