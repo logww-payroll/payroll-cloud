@@ -123,9 +123,13 @@
       <!-- EMPLOYEES -->
       <div class="page" id="page-employees">
         <h2>Employees</h2>
+        <div class="btn-row">
+          <button class="btn pri" onclick="openAddEmployeeModal()">➕ Add Employee</button>
+          <label><input type="checkbox" id="show-inactive" onchange="renderEmployees()"> Show Inactive</label>
+        </div>
         <div class="card">
           <table>
-            <thead><tr><th>Name</th><th>Designation</th><th>Basic Salary (AED)</th><th>IBAN</th></tr></thead>
+            <thead><tr><th>Name</th><th>Designation</th><th>Basic Salary (AED)</th><th>IBAN</th><th></th></tr></thead>
             <tbody id="emp-tb"></tbody>
           </table>
         </div>
@@ -157,6 +161,29 @@
         <div id="payslip-view"></div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- EDIT EMPLOYEE MODAL -->
+<div class="modal-bg" id="modal-edit-emp">
+  <div class="modal">
+    <div class="modal-t">Edit Employee <button class="btn xs" onclick="closeModal('modal-edit-emp')">✕</button></div>
+    <div class="grid" style="margin-bottom:1rem">
+      <div class="fgrp"><label>Full Name</label><input type="text" id="edit-name" readonly></div>
+      <div class="fgrp"><label>Designation</label><input type="text" id="edit-desig"></div>
+    </div>
+    <div class="grid" style="margin-bottom:1rem">
+      <div class="fgrp"><label>Basic Salary (AED)</label><input type="number" id="edit-basic" min="0"></div>
+      <div class="fgrp"><label>IBAN</label><input type="text" id="edit-iban"></div>
+    </div>
+    <div class="fgrp" style="margin-bottom:1rem">
+      <label><input type="checkbox" id="edit-inactive"> Mark as Inactive</label>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="deleteEmployee()" style="margin-right:auto">🗑 Delete</button>
+      <button class="btn" onclick="closeModal('modal-edit-emp')">Cancel</button>
+      <button class="btn pri" onclick="saveEditEmployee()">Save</button>
     </div>
   </div>
 </div>
@@ -203,26 +230,30 @@
 </div>
 
 <script>
-const employeeMaster = [
-  {name: "JUGRAJ SINGH TARSEM SINGH", basic: 0},
-  {name: "INDERJEET SINGH JASWANT SINGH", basic: 0},
-  {name: "WASEEM KHAN ABDUL WAHAB", basic: 1300},
-  {name: "FAISAL RASHEED AWAN ABDUL RASHEED", basic: 1300},
-  {name: "SAJID GULZAR GULZAR NASEEM", basic: 1300},
-  {name: "MUHAMMAD ISHTIAQ GUL AKBAR", basic: 1300},
-  {name: "SAROJ PARIYAR", basic: 1300},
-  {name: "BIR BAHADUR BHUJEL DHAN BAHADUR BHUJEL", basic: 1300},
-  {name: "SURJIT SINGH DALIP SINGH", basic: 0},
-  {name: "IRFAN ZAFAR ZAFAR IQBAL", basic: 1300},
-  {name: "JAINUL RAFIQ MOHAMMAD RAFIQ", basic: 1300}
+const defaultEmployees = [
+  {id: "E001", name: "JUGRAJ SINGH TARSEM SINGH", desig: "Driver", basic: 0, iban: "", inactive: false},
+  {id: "E002", name: "INDERJEET SINGH JASWANT SINGH", desig: "Driver", basic: 0, iban: "", inactive: false},
+  {id: "E003", name: "WASEEM KHAN ABDUL WAHAB", desig: "Driver", basic: 1300, iban: "", inactive: false},
+  {id: "E004", name: "FAISAL RASHEED AWAN ABDUL RASHEED", desig: "Driver", basic: 1300, iban: "", inactive: false},
+  {id: "E005", name: "SAJID GULZAR GULZAR NASEEM", desig: "Driver", basic: 1300, iban: "", inactive: false},
+  {id: "E006", name: "MUHAMMAD ISHTIAQ GUL AKBAR", desig: "Driver", basic: 1300, iban: "", inactive: false},
+  {id: "E007", name: "SAROJ PARIYAR", desig: "Driver", basic: 1300, iban: "", inactive: false},
+  {id: "E008", name: "BIR BAHADUR BHUJEL DHAN BAHADUR BHUJEL", desig: "Driver", basic: 1300, iban: "", inactive: false},
+  {id: "E009", name: "SURJIT SINGH DALIP SINGH", desig: "Driver", basic: 0, iban: "", inactive: false},
+  {id: "E010", name: "IRFAN ZAFAR ZAFAR IQBAL", desig: "Sales Associate", basic: 1300, iban: "", inactive: false},
+  {id: "E011", name: "JAINUL RAFIQ MOHAMMAD RAFIQ", desig: "Sales Associate", basic: 1300, iban: "", inactive: false}
 ];
 
+let employees = [];
+
 let DB = {
+  employees: [],
   trips: [],
   components: [],
   importData: null,
   currentMonth: 'June',
-  currentYear: 2026
+  currentYear: 2026,
+  editingEmpId: null
 };
 
 function doLogin(){
@@ -260,12 +291,95 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
 function renderEmployees(){
   const tb = document.getElementById('emp-tb');
+  const showInactive = document.getElementById('show-inactive').checked;
   tb.innerHTML = '';
-  employeeMaster.forEach(emp => {
+  
+  const filtered = DB.employees.filter(e => showInactive || !e.inactive);
+  
+  filtered.forEach(emp => {
     const row = document.createElement('tr');
-    row.innerHTML = `<td><strong>${emp.name}</strong></td><td>Driver</td><td>${emp.basic.toFixed(2)}</td><td>—</td>`;
+    const inactive = emp.inactive ? ' (inactive)' : '';
+    const style = emp.inactive ? 'opacity:0.6;' : '';
+    row.innerHTML = `<td style="${style}"><strong>${emp.name}${inactive}</strong></td><td>${emp.desig}</td><td>${emp.basic.toFixed(2)}</td><td>${emp.iban || '—'}</td><td><button class="btn xs" onclick="openEditEmployeeModal('${emp.id}')">Edit</button></td>`;
     tb.appendChild(row);
   });
+}
+
+function openAddEmployeeModal(){
+  document.getElementById('edit-name').value = '';
+  document.getElementById('edit-desig').value = 'Driver';
+  document.getElementById('edit-basic').value = '';
+  document.getElementById('edit-iban').value = '';
+  document.getElementById('edit-inactive').checked = false;
+  DB.editingEmpId = null;
+  document.getElementById('modal-edit-emp').querySelector('.modal-ft').innerHTML = `
+    <button class="btn" onclick="closeModal('modal-edit-emp')">Cancel</button>
+    <button class="btn pri" onclick="saveEditEmployee()">Add Employee</button>
+  `;
+  document.getElementById('edit-name').removeAttribute('readonly');
+  openModal('modal-edit-emp');
+}
+
+function openEditEmployeeModal(empId){
+  const emp = DB.employees.find(e => e.id === empId);
+  if(!emp) return;
+  
+  document.getElementById('edit-name').value = emp.name;
+  document.getElementById('edit-desig').value = emp.desig;
+  document.getElementById('edit-basic').value = emp.basic;
+  document.getElementById('edit-iban').value = emp.iban;
+  document.getElementById('edit-inactive').checked = emp.inactive;
+  DB.editingEmpId = empId;
+  document.getElementById('edit-name').setAttribute('readonly', 'readonly');
+  
+  document.getElementById('modal-edit-emp').querySelector('.modal-ft').innerHTML = `
+    <button class="btn" onclick="deleteEmployee()" style="margin-right:auto">🗑 Delete</button>
+    <button class="btn" onclick="closeModal('modal-edit-emp')">Cancel</button>
+    <button class="btn pri" onclick="saveEditEmployee()">Save</button>
+  `;
+  openModal('modal-edit-emp');
+}
+
+function saveEditEmployee(){
+  const name = document.getElementById('edit-name').value.trim();
+  const desig = document.getElementById('edit-desig').value.trim();
+  const basic = parseFloat(document.getElementById('edit-basic').value) || 0;
+  const iban = document.getElementById('edit-iban').value.trim();
+  const inactive = document.getElementById('edit-inactive').checked;
+  
+  if(!name || !desig){ alert('Fill required fields'); return; }
+  
+  if(DB.editingEmpId){
+    const emp = DB.employees.find(e => e.id === DB.editingEmpId);
+    if(emp){
+      emp.desig = desig;
+      emp.basic = basic;
+      emp.iban = iban;
+      emp.inactive = inactive;
+    }
+  } else {
+    const id = 'E' + String(DB.employees.length + 1).padStart(3, '0');
+    DB.employees.push({id, name, desig, basic, iban, inactive: false});
+  }
+  
+  saveData();
+  renderEmployees();
+  initPayslip();
+  closeModal('modal-edit-emp');
+  alert('Saved');
+}
+
+function deleteEmployee(){
+  if(!DB.editingEmpId) return;
+  if(!confirm('Delete this employee? (Cannot be undone)')){
+    return;
+  }
+  DB.employees = DB.employees.filter(e => e.id !== DB.editingEmpId);
+  saveData();
+  renderEmployees();
+  initPayslip();
+  closeModal('modal-edit-emp');
+  alert('Deleted');
 }
 
 function handleImportFile(file){
@@ -328,7 +442,8 @@ function renderTrips(){
 function initPayslip(){
   const empSelect = document.getElementById('payslip-emp');
   empSelect.innerHTML = '<option value="">-- Select Employee --</option>';
-  employeeMaster.forEach(emp => {
+  const active = DB.employees.filter(e => !e.inactive);
+  active.forEach(emp => {
     const opt = document.createElement('option');
     opt.value = emp.name;
     opt.textContent = emp.name;
@@ -364,7 +479,7 @@ function renderPayslip(){
     return;
   }
 
-  const emp = employeeMaster.find(e => e.name === empName);
+  const emp = DB.employees.find(e => e.name === empName);
   if(!emp) return;
 
   // Get trip commission for this month
@@ -421,7 +536,8 @@ function renderPayslip(){
 function openAddComponentModal(){
   const empSelect = document.getElementById('comp-emp');
   empSelect.innerHTML = '<option value="">-- Select --</option>';
-  employeeMaster.forEach(emp => {
+  const active = DB.employees.filter(e => !e.inactive);
+  active.forEach(emp => {
     const opt = document.createElement('option');
     opt.value = emp.name;
     opt.textContent = emp.name;
@@ -453,7 +569,7 @@ function saveComponent(){
 function updateDashboard(){
   document.getElementById('metric-trips').textContent = DB.trips.length;
   let total = 0;
-  employeeMaster.forEach(emp => {
+  DB.employees.filter(e => !e.inactive).forEach(emp => {
     let empTotal = emp.basic;
     DB.trips.forEach(t => { if(t.driver === emp.name) empTotal += t.commission; });
     DB.components.forEach(c => {
@@ -468,11 +584,14 @@ function updateDashboard(){
 }
 
 function saveData(){
+  localStorage.setItem('payroll_employees', JSON.stringify(DB.employees));
   localStorage.setItem('payroll_trips', JSON.stringify(DB.trips));
   localStorage.setItem('payroll_components', JSON.stringify(DB.components));
 }
 
 function loadData(){
+  DB.employees = JSON.parse(localStorage.getItem('payroll_employees') || '[]');
+  if(DB.employees.length === 0) DB.employees = JSON.parse(JSON.stringify(defaultEmployees));
   DB.trips = JSON.parse(localStorage.getItem('payroll_trips') || '[]');
   DB.components = JSON.parse(localStorage.getItem('payroll_components') || '[]');
 }
