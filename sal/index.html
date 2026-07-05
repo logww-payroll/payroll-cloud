@@ -176,7 +176,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
   <div class="sb-item active" onclick="nav('dashboard',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</div>
   <div class="sb-sec">Payroll</div>
   <div class="sb-item" onclick="nav('trips',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Trip log</div>
-  <div class="sb-item" onclick="nav('deductions',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>Deductions</div>
+  <div class="sb-item" onclick="nav('ledger',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>Ledger</div>
   <div class="sb-item" onclick="nav('run',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12h8M12 8v8"/></svg>Run payroll</div>
   <div class="sb-item" onclick="nav('history',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>History</div>
   <div class="sb-sec">Data</div>
@@ -219,17 +219,41 @@ tbody td{padding:8px 12px;vertical-align:middle}
   <div id="trips-list"></div>
 </div>
 
-<!-- DEDUCTIONS -->
-<div class="page" id="page-deductions">
+<!-- LEDGER -->
+<div class="page" id="page-ledger">
   <div class="ph">
-    <div><div class="ph-t">Deductions</div><div class="ph-s">Fines, advances, leave without pay — linked to payroll runs</div></div>
-    <div class="btn-row">
-      <select id="ded-month" class="ri" style="width:130px"></select>
-      <select id="ded-year" class="ri" style="width:90px"></select>
-      <button class="btn pri" onclick="openDedModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add deduction</button>
+    <div>
+      <div class="ph-t">Employee Ledger</div>
+      <div class="ph-s">Track payables per employee with attachments. Recoveries tracked manually by month.</div>
+    </div>
+    <button class="btn pri" onclick="openAddLedgerModal()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Add payable
+    </button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem" id="ledger-summary"></div>
+
+  <div class="card">
+    <div class="card-t">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+      Employee Ledger
+    </div>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th style="text-align:right">Current Balance (AED)</th>
+            <th style="text-align:center">Attachments</th>
+            <th style="text-align:center">Last Updated</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="ledger-tb"></tbody>
+      </table>
     </div>
   </div>
-  <div id="ded-list"></div>
 </div>
 
 <!-- RUN PAYROLL -->
@@ -675,6 +699,328 @@ function parseWorkbook(wb,filename){
   _lastImportData = JSON.parse(JSON.stringify(importData));
   renderImportPreview();
 }
+
+
+<!-- LEDGER DETAIL MODAL -->
+<div class="modal-bg" id="modal-ledger-detail">
+  <div class="modal wide">
+    <div class="modal-t">
+      <div>
+        <div style="font-size:16px;font-weight:600" id="ledger-emp-name">Employee Ledger</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:3px">Manage payables and track recoveries</div>
+      </div>
+      <button class="btn xs" onclick="closeM('modal-ledger-detail')">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:11px;color:var(--text-2);font-weight:600;letter-spacing:.3px;text-transform:uppercase;margin-bottom:6px">Current Balance</div>
+        <div style="font-size:24px;font-weight:700;letter-spacing:-.5px;color:var(--accent)" id="ledger-bal">0 AED</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-2);font-weight:600;letter-spacing:.3px;text-transform:uppercase;margin-bottom:6px">Net This Month</div>
+        <div style="font-size:24px;font-weight:700;letter-spacing:-.5px" id="ledger-net-month">0 AED</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1.25rem;display:flex;align-items:center;gap:10px">
+      <label style="font-size:12px;font-weight:600;color:var(--text-2)">View deductions for:</label>
+      <select id="ledger-month-sel" class="ri" style="width:150px" onchange="refreshLedgerMonth()">
+        <option value="">-- Select month --</option>
+      </select>
+    </div>
+
+    <div class="sdiv">Deductions & Recoveries</div>
+    <div class="tw" style="margin-bottom:1.25rem">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th style="text-align:right">Amount (AED)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="ledger-deds-tb"></tbody>
+      </table>
+    </div>
+
+    <div class="notice info" style="margin-bottom:1.25rem">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+      <div><strong>Record a recovery</strong> for the selected month to reduce the outstanding balance.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1.25rem;padding:1rem;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)">
+      <div class="fgrp"><label>Recovery date</label><input type="date" id="ledger-rec-date" class="ri"></div>
+      <div class="fgrp"><label>Recovery amount (AED)</label><input type="number" id="ledger-rec-amt" class="ri" placeholder="0" min="0"></div>
+      <div class="fgrp"><label>&nbsp;</label><button class="btn pri" onclick="addLedgerRecovery()" style="width:100%">Add recovery</button></div>
+    </div>
+
+    <div class="modal-ft">
+      <button class="btn" onclick="closeM('modal-ledger-detail')">Close</button>
+      <button class="btn dan" id="ledger-del-btn" onclick="deleteLedgerEntry()">Delete payable</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD LEDGER PAYABLE MODAL -->
+<div class="modal-bg" id="modal-add-ledger">
+  <div class="modal">
+    <div class="modal-t">
+      Add payable
+      <button class="btn xs" onclick="closeM('modal-add-ledger')">✕</button>
+    </div>
+
+    <div class="fg" style="margin-bottom:1rem">
+      <div class="fgrp"><label>Employee</label><select id="ledger-new-emp" class="ri" required><option value="">-- Select --</option></select></div>
+      <div class="fgrp"><label>Date</label><input type="date" id="ledger-new-date" class="ri" required></div>
+      <div class="fgrp"><label>Type</label><select id="ledger-new-type" class="ri" required><option value="">-- Select --</option><option value="fine">Traffic fine / Salik</option><option value="advance">Advance salary</option><option value="lwp">Leave without pay</option><option value="other">Other</option></select></div>
+      <div class="fgrp"><label>Amount (AED)</label><input type="number" id="ledger-new-amt" class="ri" placeholder="0" min="0" required></div>
+      <div class="fgrp s2"><label>Description</label><input type="text" id="ledger-new-desc" class="ri" placeholder="e.g., Salik fine - Route 11"></div>
+    </div>
+
+    <div class="modal-ft">
+      <button class="btn" onclick="closeM('modal-add-ledger')">Cancel</button>
+      <button class="btn pri" onclick="saveLedgerPayable()">Add payable</button>
+    </div>
+  </div>
+</div>
+
+
+// ============================================================================
+// LEDGER FUNCTIONS
+// ============================================================================
+let currentLedgerId = null;
+let currentLedgerEmpId = null;
+
+function renderLedger(){
+  const tb = document.getElementById('ledger-tb');
+  if(!tb) return;
+  tb.innerHTML = '';
+  
+  if(!DB.ledger || DB.ledger.length === 0){
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:2rem">No payables yet</td></tr>';
+    return;
+  }
+
+  DB.ledger.forEach(ld => {
+    const emp = DB.employees.find(e => e.id === ld.employee_id);
+    if(!emp) return;
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><strong>${emp.name}</strong></td>
+      <td style="text-align:right"><strong style="color:var(--red-text)">${ld.current_balance.toFixed(2)}</strong></td>
+      <td style="text-align:center"><span style="font-size:11px;color:var(--text-2)">0 files</span></td>
+      <td style="text-align:center"><span style="font-size:11px;color:var(--text-2)">${new Date(ld.last_updated).toLocaleDateString('en-US', {year:'2-digit',month:'2-digit',day:'2-digit'})}</span></td>
+      <td style="text-align:center"><button class="btn xs" onclick="openLedgerDetail('${ld.id}', '${ld.employee_id}', '${emp.name}')">View</button></td>
+    `;
+    tb.appendChild(row);
+  });
+}
+
+function openLedgerDetail(ledgerId, empId, empName){
+  currentLedgerId = ledgerId;
+  currentLedgerEmpId = empId;
+  document.getElementById('ledger-emp-name').textContent = empName + ' — Ledger';
+  
+  const ld = DB.ledger.find(l => l.id === ledgerId);
+  if(ld){
+    document.getElementById('ledger-bal').textContent = ld.current_balance.toFixed(2) + ' AED';
+  }
+
+  const sel = document.getElementById('ledger-month-sel');
+  sel.innerHTML = '<option value="">-- Select month --</option>';
+  const now = new Date();
+  for(let m = 0; m < 12; m++){
+    const d = new Date(now.getFullYear(), now.getMonth() - m);
+    const yr = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const label = MONTHS[d.getMonth()] + ' ' + yr;
+    const opt = document.createElement('option');
+    opt.value = mo + '/' + yr;
+    opt.textContent = label;
+    sel.appendChild(opt);
+  }
+
+  document.getElementById('ledger-month-sel').value = '';
+  document.getElementById('ledger-deds-tb').innerHTML = '';
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('ledger-rec-date').value = today;
+  document.getElementById('ledger-rec-amt').value = '';
+
+  openM('modal-ledger-detail');
+}
+
+function refreshLedgerMonth(){
+  const monthVal = document.getElementById('ledger-month-sel').value;
+  if(!monthVal){
+    document.getElementById('ledger-deds-tb').innerHTML = '';
+    document.getElementById('ledger-net-month').textContent = '0 AED';
+    return;
+  }
+
+  const [mo, yr] = monthVal.split('/');
+  const ld = DB.ledger.find(l => l.id === currentLedgerId);
+  if(!ld) return;
+
+  const deductions = (ld.deductions || []).filter(d => {
+    const dDate = new Date(d.date);
+    return String(dDate.getMonth() + 1).padStart(2, '0') === mo && dDate.getFullYear().toString() === yr;
+  });
+
+  const tb = document.getElementById('ledger-deds-tb');
+  tb.innerHTML = '';
+
+  if(deductions.length === 0){
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:1rem">No deductions for this month</td></tr>';
+    document.getElementById('ledger-net-month').textContent = '0 AED';
+    return;
+  }
+
+  let netMonth = 0;
+  deductions.forEach(d => {
+    const amtVal = d.type === 'recovery' ? -d.amount : d.amount;
+    netMonth += amtVal;
+
+    const row = document.createElement('tr');
+    const typeLabel = d.type === 'recovery' ? '✓ Recovery' : 
+                      d.type === 'fine' ? 'Fine' :
+                      d.type === 'advance' ? 'Advance' :
+                      d.type === 'lwp' ? 'Leave w/o pay' : 'Other';
+    const badgeClass = d.type === 'recovery' ? 'badge' : 'badge';
+
+    row.innerHTML = `
+      <td>${new Date(d.date).toLocaleDateString('en-US', {year:'2-digit',month:'2-digit',day:'2-digit'})}</td>
+      <td><span class="badge ${badgeClass}">${typeLabel}</span></td>
+      <td>${d.description}</td>
+      <td style="text-align:right"><strong style="color:${d.type === 'recovery' ? 'var(--green-text)' : 'var(--red-text)'}">${d.type === 'recovery' ? '-' : '+'}${d.amount.toFixed(2)}</strong></td>
+      <td style="text-align:center"><button class="btn xs" onclick="deleteLedgerDeduction('${d.id}')">Delete</button></td>
+    `;
+    tb.appendChild(row);
+  });
+
+  const netStr = netMonth >= 0 ? '+' + netMonth.toFixed(2) : netMonth.toFixed(2);
+  const netColor = netMonth >= 0 ? 'var(--red-text)' : 'var(--green-text)';
+  document.getElementById('ledger-net-month').innerHTML = `<span style="color:${netColor}">${netStr} AED</span>`;
+}
+
+function addLedgerRecovery(){
+  const recDate = document.getElementById('ledger-rec-date').value;
+  const recAmt = parseFloat(document.getElementById('ledger-rec-amt').value);
+
+  if(!recDate || !recAmt || recAmt <= 0){
+    alert('Please enter a date and amount');
+    return;
+  }
+
+  const ld = DB.ledger.find(l => l.id === currentLedgerId);
+  if(!ld) return;
+
+  if(!ld.deductions) ld.deductions = [];
+  ld.deductions.push({id:uid(),date:recDate,type:'recovery',description:'Manual recovery',amount:recAmt});
+  ld.current_balance -= recAmt;
+  ld.last_updated = new Date().toISOString();
+
+  saveToDB('ledger', DB.ledger);
+  document.getElementById('ledger-rec-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('ledger-rec-amt').value = '';
+  document.getElementById('ledger-bal').textContent = ld.current_balance.toFixed(2) + ' AED';
+  refreshLedgerMonth();
+  renderLedger();
+  alert('Recovery added');
+}
+
+function openAddLedgerModal(){
+  document.getElementById('ledger-new-emp').innerHTML = '<option value="">-- Select --</option>';
+  DB.employees.forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e.id;
+    opt.textContent = e.name;
+    document.getElementById('ledger-new-emp').appendChild(opt);
+  });
+
+  document.getElementById('ledger-new-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('ledger-new-type').value = '';
+  document.getElementById('ledger-new-amt').value = '';
+  document.getElementById('ledger-new-desc').value = '';
+  openM('modal-add-ledger');
+}
+
+function saveLedgerPayable(){
+  const empId = document.getElementById('ledger-new-emp').value;
+  const date = document.getElementById('ledger-new-date').value;
+  const type = document.getElementById('ledger-new-type').value;
+  const amt = parseFloat(document.getElementById('ledger-new-amt').value);
+  const desc = document.getElementById('ledger-new-desc').value;
+
+  if(!empId || !date || !type || !amt || amt <= 0){
+    alert('Fill all required fields');
+    return;
+  }
+
+  const emp = DB.employees.find(e => e.id === empId);
+  let ld = DB.ledger.find(l => l.employee_id === empId);
+
+  if(!ld){
+    ld = {id:uid(),employee_id:empId,current_balance:amt,last_updated:new Date().toISOString(),deductions:[{id:uid(),date,type,description:desc || 'Payable',amount:amt}],attachments:[]};
+    DB.ledger.push(ld);
+  } else {
+    if(!ld.deductions) ld.deductions = [];
+    ld.deductions.push({id:uid(),date,type,description:desc || 'Payable',amount:amt});
+    ld.current_balance += amt;
+    ld.last_updated = new Date().toISOString();
+  }
+
+  saveToDB('ledger', DB.ledger);
+  renderLedger();
+  closeM('modal-add-ledger');
+  alert(amt.toFixed(2) + ' AED added to ' + emp.name);
+}
+
+function deleteLedgerEntry(){
+  if(!confirm('Delete this payable?')) return;
+  DB.ledger = DB.ledger.filter(l => l.id !== currentLedgerId);
+  saveToDB('ledger', DB.ledger);
+  renderLedger();
+  closeM('modal-ledger-detail');
+  alert('Payable deleted');
+}
+
+function deleteLedgerDeduction(dedId){
+  if(!confirm('Delete this deduction?')) return;
+  const ld = DB.ledger.find(l => l.id === currentLedgerId);
+  if(!ld) return;
+  const ded = ld.deductions.find(d => d.id === dedId);
+  if(!ded) return;
+  if(ded.type !== 'recovery'){
+    ld.current_balance -= ded.amount;
+  } else {
+    ld.current_balance += ded.amount;
+  }
+  ld.deductions = ld.deductions.filter(d => d.id !== dedId);
+  ld.last_updated = new Date().toISOString();
+  saveToDB('ledger', DB.ledger);
+  document.getElementById('ledger-bal').textContent = ld.current_balance.toFixed(2) + ' AED';
+  refreshLedgerMonth();
+  renderLedger();
+  alert('Deduction deleted');
+}
+
+function initLedger(){
+  if(!DB.ledger) DB.ledger = [];
+  renderLedger();
+}
+
+// Initialize on page nav
+const origNav = window.nav || function(){};
+window.nav = function(page, el){
+  if(page === 'ledger'){
+    initLedger();
+  }
+  if(origNav && typeof origNav === 'function') origNav.call(this, page, el);
+};
 
 </script>
 </body>
