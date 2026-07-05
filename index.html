@@ -31,8 +31,8 @@
     .app.active { display: flex; }
     .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
     .header-title { font-size: 18px; font-weight: 600; }
-    .nav { display: flex; gap: 1rem; margin: 0 2rem; }
-    .nav-btn { padding: 12px 16px; border: none; background: none; cursor: pointer; font-size: 13px; border-bottom: 2px solid transparent; color: var(--text-2); }
+    .nav { display: flex; gap: 1rem; margin: 0 2rem; overflow-x: auto; }
+    .nav-btn { padding: 12px 16px; border: none; background: none; cursor: pointer; font-size: 13px; border-bottom: 2px solid transparent; color: var(--text-2); white-space: nowrap; }
     .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
     .logout-btn { background: #E74C3C; color: white; padding: 8px 16px; border-radius: var(--r); border: none; cursor: pointer; font-size: 12px; font-weight: 600; }
     .main { padding: 2rem; max-width: 1400px; }
@@ -51,10 +51,6 @@
     .btn.sm { padding: 5px 10px; font-size: 12px; }
     .btn.xs { padding: 4px 8px; font-size: 11px; }
     .btn-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
-    .metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1rem 1.25rem; text-align: center; }
-    .metric-l { font-size: 11px; color: var(--text-2); font-weight: 500; margin-bottom: 6px; }
-    .metric-v { font-size: 22px; font-weight: 600; }
-    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.75rem; }
     .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 200; display: none; align-items: center; justify-content: center; }
     .modal-bg.open { display: flex; }
     .modal { background: var(--surface); border-radius: var(--r); padding: 1.75rem; width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,.12); }
@@ -66,6 +62,13 @@
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .notice { display: flex; gap: 10px; align-items: flex-start; padding: 0.875rem 1rem; border-radius: var(--r); margin-bottom: 1.25rem; font-size: 13px; border: 1px solid var(--border); }
     .notice.info { background: #EBF2FF; color: #1A4B8C; border-color: #B8D0F5; }
+    .payslip { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1.75rem; margin-bottom: 1rem; }
+    .payslip-h { font-size: 16px; font-weight: 700; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem; }
+    .payslip-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; }
+    .payslip-row.label { color: var(--text-2); }
+    .payslip-row.total { border-top: 1px solid var(--border); padding-top: 1rem; font-weight: 600; font-size: 14px; margin-top: 0.5rem; }
+    .payslip-row.deductions { border-top: 2px solid var(--border); margin-top: 0.5rem; padding-top: 1rem; }
+    .payslip-row.net { background: var(--bg); padding: 12px; border-radius: var(--r); font-size: 15px; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -85,7 +88,6 @@
       <input type="password" id="login-pass" placeholder="••••••••" value="password">
     </div>
     <button class="login-btn" onclick="doLogin()">Sign in</button>
-    <div style="font-size:11px;color:var(--text-3);text-align:center;margin-top:1.5rem">Logistique WW LLC</div>
   </div>
 </div>
 
@@ -103,20 +105,18 @@
       <button class="nav-btn active" onclick="showPage('dashboard')">📊 Dashboard</button>
       <button class="nav-btn" onclick="showPage('employees')">👥 Employees</button>
       <button class="nav-btn" onclick="showPage('trips')">🚐 Trips</button>
-      <button class="nav-btn" onclick="showPage('ledger')">📋 Ledger</button>
-      <button class="nav-btn" onclick="showPage('payroll')">💰 Run Payroll</button>
-      <button class="nav-btn" onclick="showPage('history')">📜 History</button>
+      <button class="nav-btn" onclick="showPage('payslip')">📋 Payslip</button>
     </div>
     <div class="main">
 
       <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
         <h2>Dashboard</h2>
-        <div class="metrics">
-          <div class="metric"><div class="metric-l">Total Employees</div><div class="metric-v">11</div></div>
-          <div class="metric"><div class="metric-l">Total Trips</div><div class="metric-v" id="metric-trips">0</div></div>
-          <div class="metric"><div class="metric-l">Outstanding Ledger</div><div class="metric-v" id="metric-ledger">0 AED</div></div>
-          <div class="metric"><div class="metric-l">Payroll Runs</div><div class="metric-v">0</div></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.75rem">
+          <div class="card" style="text-align:center"><div style="font-size:11px;color:var(--text-2);font-weight:600;margin-bottom:6px">Total Employees</div><div style="font-size:22px;font-weight:600">11</div></div>
+          <div class="card" style="text-align:center"><div style="font-size:11px;color:var(--text-2);font-weight:600;margin-bottom:6px">Trips Imported</div><div style="font-size:22px;font-weight:600" id="metric-trips">0</div></div>
+          <div class="card" style="text-align:center"><div style="font-size:11px;color:var(--text-2);font-weight:600;margin-bottom:6px">Total Payroll</div><div style="font-size:22px;font-weight:600" id="metric-payroll">0 AED</div></div>
+          <div class="card" style="text-align:center"><div style="font-size:11px;color:var(--text-2);font-weight:600;margin-bottom:6px">Month</div><div style="font-size:22px;font-weight:600" id="current-month">June 2026</div></div>
         </div>
       </div>
 
@@ -125,7 +125,7 @@
         <h2>Employees</h2>
         <div class="card">
           <table>
-            <thead><tr><th>Name</th><th>Designation</th><th>Basic Salary</th><th>Email</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Designation</th><th>Basic Salary (AED)</th><th>IBAN</th></tr></thead>
             <tbody id="emp-tb"></tbody>
           </table>
         </div>
@@ -139,40 +139,22 @@
         </div>
         <div class="card">
           <table>
-            <thead><tr><th>Date</th><th>Driver</th><th>Route</th><th>Commission (AED)</th><th></th></tr></thead>
-            <tbody id="trips-tb"><tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-2)">No trips. Import Excel template.</td></tr></tbody>
+            <thead><tr><th>Date</th><th>Driver</th><th>Route</th><th>Commission (AED)</th></tr></thead>
+            <tbody id="trips-tb"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-2)">No trips. Import Excel template.</td></tr></tbody>
           </table>
         </div>
       </div>
 
-      <!-- LEDGER -->
-      <div class="page" id="page-ledger">
-        <h2>Employee Ledger</h2>
+      <!-- PAYSLIP -->
+      <div class="page" id="page-payslip">
+        <h2>Payslip</h2>
         <div class="btn-row">
-          <button class="btn pri" onclick="openAddPayableModal()">➕ Add Payable</button>
+          <select id="payslip-emp" onchange="renderPayslip()" style="padding:8px;border:1px solid var(--border);border-radius:var(--r)"></select>
+          <select id="payslip-month" onchange="renderPayslip()" style="padding:8px;border:1px solid var(--border);border-radius:var(--r)"></select>
+          <select id="payslip-year" onchange="renderPayslip()" style="padding:8px;border:1px solid var(--border);border-radius:var(--r)"></select>
+          <button class="btn pri" onclick="openAddComponentModal()">➕ Add Component</button>
         </div>
-        <div class="card">
-          <table>
-            <thead><tr><th>Employee</th><th style="text-align:right">Balance (AED)</th><th style="text-align:center">Last Updated</th><th></th></tr></thead>
-            <tbody id="ledger-tb"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-2)">No payables</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- PAYROLL -->
-      <div class="page" id="page-payroll">
-        <h2>Run Payroll</h2>
-        <div class="btn-row">
-          <label>Period: <select id="run-month" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)"><option>June</option></select></label>
-          <select id="run-year" style="padding:6px;border:1px solid var(--border);border-radius:var(--r)"><option>2026</option></select>
-        </div>
-        <div class="card"><p style="text-align:center;color:var(--text-2);padding:2rem">Import trips and deductions first.</p></div>
-      </div>
-
-      <!-- HISTORY -->
-      <div class="page" id="page-history">
-        <h2>Payroll History</h2>
-        <div class="card"><p style="text-align:center;color:var(--text-2);padding:2rem">No payroll runs yet.</p></div>
+        <div id="payslip-view"></div>
       </div>
 
     </div>
@@ -182,13 +164,8 @@
 <!-- IMPORT MODAL -->
 <div class="modal-bg" id="modal-import">
   <div class="modal">
-    <div class="modal-t">
-      Import Trips from Excel
-      <button class="btn xs" onclick="closeModal('modal-import')">✕</button>
-    </div>
-    <div class="notice info">
-      <span>Upload your Excel file with Trip Log sheet. Driver names must match exactly with employee list.</span>
-    </div>
+    <div class="modal-t">Import Trips from Excel <button class="btn xs" onclick="closeModal('modal-import')">✕</button></div>
+    <div class="notice info"><span>Upload Excel with Trip Log sheet. Driver names must match exactly.</span></div>
     <div style="border:2px dashed var(--border);border-radius:var(--r);padding:2rem;text-align:center;cursor:pointer;margin-bottom:1rem" onclick="document.getElementById('import-file').click()">
       <div style="font-size:13px;font-weight:600;margin-bottom:4px">Click to select or drag and drop</div>
       <div style="font-size:11px;color:var(--text-2)">.xlsx files only</div>
@@ -196,10 +173,7 @@
     <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="handleImportFile(this.files[0])">
     <div id="import-preview" style="display:none">
       <div class="card-t">Found <span id="import-count">0</span> trips</div>
-      <table style="margin-bottom:1rem;font-size:12px">
-        <thead><tr><th>Date</th><th>Driver</th><th>Route</th><th>Commission</th></tr></thead>
-        <tbody id="import-tb"></tbody>
-      </table>
+      <table style="margin-bottom:1rem;font-size:12px"><thead><tr><th>Date</th><th>Driver</th><th>Route</th><th>Commission</th></tr></thead><tbody id="import-tb"></tbody></table>
     </div>
     <div class="modal-ft">
       <button class="btn" onclick="closeModal('modal-import')">Cancel</button>
@@ -208,77 +182,48 @@
   </div>
 </div>
 
-<!-- ADD PAYABLE MODAL -->
-<div class="modal-bg" id="modal-payable">
+<!-- ADD COMPONENT MODAL -->
+<div class="modal-bg" id="modal-component">
   <div class="modal">
-    <div class="modal-t">
-      Add Payable
-      <button class="btn xs" onclick="closeModal('modal-payable')">✕</button>
+    <div class="modal-t">Add Salary Component <button class="btn xs" onclick="closeModal('modal-component')">✕</button></div>
+    <div class="grid" style="margin-bottom:1rem">
+      <div class="fgrp"><label>Employee</label><select id="comp-emp"><option value="">-- Select --</option></select></div>
+      <div class="fgrp"><label>Month</label><select id="comp-month"><option>June</option></select></div>
     </div>
     <div class="grid" style="margin-bottom:1rem">
-      <div class="fgrp"><label>Employee</label><select id="payable-emp"><option value="">-- Select --</option></select></div>
-      <div class="fgrp"><label>Date</label><input type="date" id="payable-date"></div>
-      <div class="fgrp"><label>Type</label><select id="payable-type"><option value="">-- Select --</option><option value="fine">Fine / Salik</option><option value="advance">Advance Salary</option><option value="lwp">Leave w/o Pay</option><option value="other">Other</option></select></div>
-      <div class="fgrp"><label>Amount (AED)</label><input type="number" id="payable-amt" min="0"></div>
+      <div class="fgrp"><label>Type</label><select id="comp-type"><option value="">-- Select --</option><option value="attendance">Attendance Allowance</option><option value="adhoc">Adhoc Allowance</option><option value="fine">Salik/Fine</option><option value="advance">Advance Salary</option><option value="lwp">Leave w/o Pay</option><option value="other">Other</option></select></div>
+      <div class="fgrp"><label>Amount (AED)</label><input type="number" id="comp-amt" min="0"></div>
     </div>
-    <div class="fgrp" style="margin-bottom:1rem"><label>Description</label><input type="text" id="payable-desc" placeholder="e.g., Salik fine - Route 11"></div>
+    <div class="fgrp" style="margin-bottom:1rem"><label>Description</label><input type="text" id="comp-desc" placeholder="e.g., Salik fine - 5 June"></div>
     <div class="modal-ft">
-      <button class="btn" onclick="closeModal('modal-payable')">Cancel</button>
-      <button class="btn pri" onclick="savePayable()">Add payable</button>
-    </div>
-  </div>
-</div>
-
-<!-- LEDGER DETAIL MODAL -->
-<div class="modal-bg" id="modal-ledger-detail">
-  <div class="modal" style="width:800px">
-    <div class="modal-t">
-      <div id="ledger-emp-name">Employee Ledger</div>
-      <button class="btn xs" onclick="closeModal('modal-ledger-detail')">✕</button>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border)">
-      <div>
-        <div style="font-size:11px;color:var(--text-2);font-weight:600;margin-bottom:6px">Current Balance</div>
-        <div style="font-size:24px;font-weight:700" id="ledger-bal">0 AED</div>
-      </div>
-      <div>
-        <div style="font-size:11px;color:var(--text-2);font-weight:600;margin-bottom:6px">View Month</div>
-        <select id="ledger-month-sel" onchange="refreshLedgerMonth()" style="padding:8px;border:1px solid var(--border);border-radius:var(--r)"></select>
-      </div>
-    </div>
-    <div class="card-t">Deductions & Recoveries</div>
-    <table style="margin-bottom:1.5rem;font-size:12px">
-      <thead><tr><th>Date</th><th>Type</th><th>Description</th><th style="text-align:right">Amount (AED)</th></tr></thead>
-      <tbody id="ledger-deds-tb"><tr><td colspan="4" style="text-align:center;padding:1rem;color:var(--text-2)">Select a month</td></tr></tbody>
-    </table>
-    <div class="card-t">Manual Recovery</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1rem">
-      <div class="fgrp"><label>Date</label><input type="date" id="recovery-date"></div>
-      <div class="fgrp"><label>Amount (AED)</label><input type="number" id="recovery-amt" min="0"></div>
-      <div class="fgrp"><label>&nbsp;</label><button class="btn pri" onclick="addRecovery()" style="width:100%">Add recovery</button></div>
-    </div>
-    <div class="modal-ft">
-      <button class="btn" onclick="closeModal('modal-ledger-detail')">Close</button>
+      <button class="btn" onclick="closeModal('modal-component')">Cancel</button>
+      <button class="btn pri" onclick="saveComponent()">Add component</button>
     </div>
   </div>
 </div>
 
 <script>
-const employees = [
-  "JUGRAJ SINGH TARSEM SINGH",
-  "INDERJEET SINGH JASWANT SINGH",
-  "WASEEM KHAN ABDUL WAHAB",
-  "FAISAL RASHEED AWAN ABDUL RASHEED",
-  "SAJID GULZAR GULZAR NASEEM",
-  "MUHAMMAD ISHTIAQ GUL AKBAR",
-  "SAROJ PARIYAR",
-  "BIR BAHADUR BHUJEL DHAN BAHADUR BHUJEL",
-  "SURJIT SINGH DALIP SINGH",
-  "IRFAN ZAFAR ZAFAR IQBAL",
-  "JAINUL RAFIQ MOHAMMAD RAFIQ"
+const employeeMaster = [
+  {name: "JUGRAJ SINGH TARSEM SINGH", basic: 0},
+  {name: "INDERJEET SINGH JASWANT SINGH", basic: 0},
+  {name: "WASEEM KHAN ABDUL WAHAB", basic: 1300},
+  {name: "FAISAL RASHEED AWAN ABDUL RASHEED", basic: 1300},
+  {name: "SAJID GULZAR GULZAR NASEEM", basic: 1300},
+  {name: "MUHAMMAD ISHTIAQ GUL AKBAR", basic: 1300},
+  {name: "SAROJ PARIYAR", basic: 1300},
+  {name: "BIR BAHADUR BHUJEL DHAN BAHADUR BHUJEL", basic: 1300},
+  {name: "SURJIT SINGH DALIP SINGH", basic: 0},
+  {name: "IRFAN ZAFAR ZAFAR IQBAL", basic: 1300},
+  {name: "JAINUL RAFIQ MOHAMMAD RAFIQ", basic: 1300}
 ];
 
-let DB = { trips: [], ledger: [], importData: null, currentLedgerId: null };
+let DB = {
+  trips: [],
+  components: [],
+  importData: null,
+  currentMonth: 'June',
+  currentYear: 2026
+};
 
 function doLogin(){
   const email = document.getElementById('login-email').value;
@@ -288,8 +233,10 @@ function doLogin(){
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('active');
   document.getElementById('user-email').textContent = email;
-  renderEmployees();
   loadData();
+  renderEmployees();
+  initPayslip();
+  updateDashboard();
 }
 
 function doLogout(){
@@ -305,9 +252,7 @@ function showPage(name){
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
-  if(name === 'ledger') renderLedger();
-  if(name === 'trips') renderTrips();
-  if(name === 'dashboard') updateDashboard();
+  if(name === 'payslip') renderPayslip();
 }
 
 function openModal(id){ document.getElementById(id).classList.add('open'); }
@@ -316,37 +261,9 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 function renderEmployees(){
   const tb = document.getElementById('emp-tb');
   tb.innerHTML = '';
-  employees.forEach(name => {
+  employeeMaster.forEach(emp => {
     const row = document.createElement('tr');
-    row.innerHTML = `<td><strong>${name}</strong></td><td>Driver</td><td>0</td><td>—</td><td><button class="btn sm">Edit</button></td>`;
-    tb.appendChild(row);
-  });
-}
-
-function renderTrips(){
-  const tb = document.getElementById('trips-tb');
-  tb.innerHTML = '';
-  if(DB.trips.length === 0){
-    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-2)">No trips. Import Excel template.</td></tr>';
-    return;
-  }
-  DB.trips.forEach(t => {
-    const row = document.createElement('tr');
-    row.innerHTML = `<td>${t.date}</td><td>${t.driver}</td><td>${t.route}</td><td>${t.commission}</td><td><button class="btn xs">Delete</button></td>`;
-    tb.appendChild(row);
-  });
-}
-
-function renderLedger(){
-  const tb = document.getElementById('ledger-tb');
-  tb.innerHTML = '';
-  if(DB.ledger.length === 0){
-    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-2)">No payables</td></tr>';
-    return;
-  }
-  DB.ledger.forEach(ld => {
-    const row = document.createElement('tr');
-    row.innerHTML = `<td>${ld.emp}</td><td style="text-align:right"><strong>${ld.balance.toFixed(2)}</strong></td><td style="text-align:center">${new Date(ld.updated).toLocaleDateString()}</td><td><button class="btn xs" onclick="openLedgerDetail('${ld.id}')">View</button></td>`;
+    row.innerHTML = `<td><strong>${emp.name}</strong></td><td>Driver</td><td>${emp.basic.toFixed(2)}</td><td>—</td>`;
     tb.appendChild(row);
   });
 }
@@ -394,120 +311,170 @@ function confirmImport(){
   closeModal('modal-import');
 }
 
-function openImportModal(){ openModal('modal-import'); }
-
-function openAddPayableModal(){
-  document.getElementById('payable-emp').innerHTML = '<option value="">-- Select --</option>';
-  employees.forEach(e => {
-    const opt = document.createElement('option');
-    opt.value = e;
-    opt.textContent = e;
-    document.getElementById('payable-emp').appendChild(opt);
-  });
-  document.getElementById('payable-date').valueAsDate = new Date();
-  openModal('modal-payable');
-}
-
-function savePayable(){
-  const emp = document.getElementById('payable-emp').value;
-  const date = document.getElementById('payable-date').value;
-  const type = document.getElementById('payable-type').value;
-  const amt = parseFloat(document.getElementById('payable-amt').value);
-  const desc = document.getElementById('payable-desc').value;
-  if(!emp || !date || !type || !amt){ alert('Fill all fields'); return; }
-  let ld = DB.ledger.find(l => l.emp === emp);
-  if(!ld){
-    ld = {id: 'ld-' + Math.random().toString(36).substr(2, 9), emp, balance: amt, updated: new Date(), deductions: []};
-    DB.ledger.push(ld);
-  } else {
-    ld.balance += amt;
-    ld.updated = new Date();
-  }
-  ld.deductions.push({date, type, description: desc, amount: amt});
-  saveData();
-  renderLedger();
-  closeModal('modal-payable');
-  alert(amt.toFixed(2) + ' AED added');
-}
-
-function openLedgerDetail(id){
-  DB.currentLedgerId = id;
-  const ld = DB.ledger.find(l => l.id === id);
-  if(!ld) return;
-  document.getElementById('ledger-emp-name').textContent = ld.emp + ' — Ledger';
-  document.getElementById('ledger-bal').textContent = ld.balance.toFixed(2) + ' AED';
-  const sel = document.getElementById('ledger-month-sel');
-  sel.innerHTML = '<option value="">-- Select month --</option>';
-  const now = new Date();
-  for(let m = 0; m < 12; m++){
-    const d = new Date(now.getFullYear(), now.getMonth() - m);
-    const mo = String(d.getMonth() + 1).padStart(2, '0');
-    const yr = d.getFullYear();
-    const opt = document.createElement('option');
-    opt.value = mo + '/' + yr;
-    opt.textContent = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + yr;
-    sel.appendChild(opt);
-  }
-  document.getElementById('recovery-date').valueAsDate = new Date();
-  openModal('modal-ledger-detail');
-}
-
-function refreshLedgerMonth(){
-  const ld = DB.ledger.find(l => l.id === DB.currentLedgerId);
-  if(!ld) return;
-  const monthVal = document.getElementById('ledger-month-sel').value;
-  if(!monthVal){
-    document.getElementById('ledger-deds-tb').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1rem">Select a month</td></tr>';
-    return;
-  }
-  const [mo, yr] = monthVal.split('/');
-  const filtered = ld.deductions.filter(d => {
-    const dDate = new Date(d.date);
-    return String(dDate.getMonth() + 1).padStart(2, '0') === mo && dDate.getFullYear().toString() === yr;
-  });
-  const tb = document.getElementById('ledger-deds-tb');
+function renderTrips(){
+  const tb = document.getElementById('trips-tb');
   tb.innerHTML = '';
-  if(filtered.length === 0){
-    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1rem">No deductions this month</td></tr>';
+  if(DB.trips.length === 0){
+    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-2)">No trips. Import Excel template.</td></tr>';
     return;
   }
-  filtered.forEach(d => {
+  DB.trips.forEach(t => {
     const row = document.createElement('tr');
-    row.innerHTML = `<td>${new Date(d.date).toLocaleDateString()}</td><td>${d.type}</td><td>${d.description}</td><td style="text-align:right">${d.amount.toFixed(2)}</td>`;
+    row.innerHTML = `<td>${t.date}</td><td>${t.driver}</td><td>${t.route}</td><td>${t.commission.toFixed(2)}</td>`;
     tb.appendChild(row);
   });
 }
 
-function addRecovery(){
-  const ld = DB.ledger.find(l => l.id === DB.currentLedgerId);
-  if(!ld) return;
-  const date = document.getElementById('recovery-date').value;
-  const amt = parseFloat(document.getElementById('recovery-amt').value);
-  if(!date || !amt){ alert('Enter date and amount'); return; }
-  ld.balance -= amt;
-  ld.deductions.push({date, type: 'recovery', description: 'Manual recovery', amount: amt});
-  ld.updated = new Date();
+function initPayslip(){
+  const empSelect = document.getElementById('payslip-emp');
+  empSelect.innerHTML = '<option value="">-- Select Employee --</option>';
+  employeeMaster.forEach(emp => {
+    const opt = document.createElement('option');
+    opt.value = emp.name;
+    opt.textContent = emp.name;
+    empSelect.appendChild(opt);
+  });
+
+  const monthSelect = document.getElementById('payslip-month');
+  ['January','February','March','April','May','June','July','August','September','October','November','December'].forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    if(m === 'June') opt.selected = true;
+    monthSelect.appendChild(opt);
+  });
+
+  const yearSelect = document.getElementById('payslip-year');
+  for(let y = 2024; y <= 2027; y++){
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if(y === 2026) opt.selected = true;
+    yearSelect.appendChild(opt);
+  }
+}
+
+function renderPayslip(){
+  const empName = document.getElementById('payslip-emp').value;
+  const month = document.getElementById('payslip-month').value;
+  const year = parseInt(document.getElementById('payslip-year').value);
+
+  if(!empName){
+    document.getElementById('payslip-view').innerHTML = '<div class="card"><p style="text-align:center;color:var(--text-2);padding:2rem">Select an employee to view payslip</p></div>';
+    return;
+  }
+
+  const emp = employeeMaster.find(e => e.name === empName);
+  if(!emp) return;
+
+  // Get trip commission for this month
+  let tripCommission = 0;
+  DB.trips.forEach(t => {
+    const tDate = new Date(t.date);
+    if(t.driver === empName && tDate.getFullYear() === year && tDate.toLocaleDateString('en-US', {month: 'long'}) === month){
+      tripCommission += t.commission;
+    }
+  });
+
+  // Get attendance and adhoc for this month
+  let attendance = 0, adhoc = 0, deductions = {};
+  DB.components.forEach(c => {
+    if(c.emp === empName && c.month === month && c.year === year){
+      if(c.type === 'attendance') attendance += c.amount;
+      else if(c.type === 'adhoc') adhoc += c.amount;
+      else if(c.type === 'fine' || c.type === 'advance' || c.type === 'lwp' || c.type === 'other'){
+        if(!deductions[c.type]) deductions[c.type] = 0;
+        deductions[c.type] += c.amount;
+      }
+    }
+  });
+
+  const basicSalary = emp.basic;
+  const subtotal = basicSalary + attendance + adhoc + tripCommission;
+  const totalDed = Object.values(deductions).reduce((a,b) => a+b, 0);
+  const netPay = subtotal - totalDed;
+
+  let html = `<div class="payslip">
+    <div class="payslip-h">${empName} — ${month} ${year}</div>
+    
+    <div class="payslip-row label"><strong>EARNINGS</strong></div>
+    <div class="payslip-row"><span>Basic Salary</span><span>${basicSalary.toFixed(2)} AED</span></div>`;
+
+  if(attendance > 0) html += `<div class="payslip-row"><span>Attendance Allowance</span><span>${attendance.toFixed(2)} AED</span></div>`;
+  if(adhoc > 0) html += `<div class="payslip-row"><span>Adhoc Allowance</span><span>${adhoc.toFixed(2)} AED</span></div>`;
+  
+  html += `<div class="payslip-row"><span>Trip Commission</span><span>${tripCommission.toFixed(2)} AED</span></div>`;
+  html += `<div class="payslip-row total"><span>Subtotal</span><span>${subtotal.toFixed(2)} AED</span></div>`;
+
+  html += `<div class="payslip-row label deductions"><strong>DEDUCTIONS</strong></div>`;
+  if(deductions.fine > 0) html += `<div class="payslip-row"><span>Salik/Fines</span><span>-${deductions.fine.toFixed(2)} AED</span></div>`;
+  if(deductions.advance > 0) html += `<div class="payslip-row"><span>Advance Salary</span><span>-${deductions.advance.toFixed(2)} AED</span></div>`;
+  if(deductions.lwp > 0) html += `<div class="payslip-row"><span>Leave w/o Pay</span><span>-${deductions.lwp.toFixed(2)} AED</span></div>`;
+  if(deductions.other > 0) html += `<div class="payslip-row"><span>Other</span><span>-${deductions.other.toFixed(2)} AED</span></div>`;
+
+  html += `<div class="payslip-row net"><span>NET PAY</span><span>${netPay.toFixed(2)} AED</span></div>`;
+  html += `</div>`;
+
+  document.getElementById('payslip-view').innerHTML = html;
+}
+
+function openAddComponentModal(){
+  const empSelect = document.getElementById('comp-emp');
+  empSelect.innerHTML = '<option value="">-- Select --</option>';
+  employeeMaster.forEach(emp => {
+    const opt = document.createElement('option');
+    opt.value = emp.name;
+    opt.textContent = emp.name;
+    empSelect.appendChild(opt);
+  });
+  document.getElementById('comp-month').value = 'June';
+  openModal('modal-component');
+}
+
+function saveComponent(){
+  const emp = document.getElementById('comp-emp').value;
+  const month = document.getElementById('comp-month').value;
+  const type = document.getElementById('comp-type').value;
+  const amt = parseFloat(document.getElementById('comp-amt').value);
+  const desc = document.getElementById('comp-desc').value;
+
+  if(!emp || !type || !amt){ alert('Fill required fields'); return; }
+
+  DB.components.push({
+    emp, month, year: 2026, type, amount: amt, description: desc, id: Math.random().toString(36).substr(2, 9)
+  });
+
   saveData();
-  document.getElementById('ledger-bal').textContent = ld.balance.toFixed(2) + ' AED';
-  document.getElementById('recovery-amt').value = '';
-  refreshLedgerMonth();
-  alert('Recovery added');
+  renderPayslip();
+  closeModal('modal-component');
+  alert('Component added');
 }
 
 function updateDashboard(){
   document.getElementById('metric-trips').textContent = DB.trips.length;
-  const total = DB.ledger.reduce((sum, l) => sum + l.balance, 0);
-  document.getElementById('metric-ledger').textContent = total.toFixed(2) + ' AED';
+  let total = 0;
+  employeeMaster.forEach(emp => {
+    let empTotal = emp.basic;
+    DB.trips.forEach(t => { if(t.driver === emp.name) empTotal += t.commission; });
+    DB.components.forEach(c => {
+      if(c.emp === emp.name && c.month === 'June' && c.year === 2026){
+        if(['attendance','adhoc'].includes(c.type)) empTotal += c.amount;
+        else empTotal -= c.amount;
+      }
+    });
+    total += empTotal;
+  });
+  document.getElementById('metric-payroll').textContent = total.toFixed(2) + ' AED';
 }
 
 function saveData(){
   localStorage.setItem('payroll_trips', JSON.stringify(DB.trips));
-  localStorage.setItem('payroll_ledger', JSON.stringify(DB.ledger));
+  localStorage.setItem('payroll_components', JSON.stringify(DB.components));
 }
 
 function loadData(){
   DB.trips = JSON.parse(localStorage.getItem('payroll_trips') || '[]');
-  DB.ledger = JSON.parse(localStorage.getItem('payroll_ledger') || '[]');
+  DB.components = JSON.parse(localStorage.getItem('payroll_components') || '[]');
 }
 
 window.onload = () => {
@@ -516,8 +483,9 @@ window.onload = () => {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').classList.add('active');
     document.getElementById('user-email').textContent = loggedIn;
-    renderEmployees();
     loadData();
+    renderEmployees();
+    initPayslip();
     updateDashboard();
   } else {
     document.getElementById('login-screen').style.display = 'flex';
